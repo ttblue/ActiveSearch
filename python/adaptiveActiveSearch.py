@@ -53,12 +53,12 @@ class adaptiveKernelAS (ASI.genericAS):
 
 	def relearnSimilarity (self, params=None):
 
-		init_labels = {i:self.kAS.labels[i] for i in self.kAS.labeled_idxs}
-		L = [(self.Xf[:,i], l) for i,l in init_labels.items()]
+		X = self.Xf[:, self.kAS.labeled_idxs]
+		Y = self.kAS.labels[self.kAS.labeled_idxs]
 
 		print("Running SPSD for relearning similarity.")
 
-		self.spsdSL.initialize(L,self.W,params)
+		self.spsdSL.initialize(X,Y, self.W,params)
 		self.spsdSL.runSPSD()
 		
 		print("Finished learning new similarity.")
