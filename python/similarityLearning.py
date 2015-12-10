@@ -24,7 +24,6 @@ class SPSDParameters:
 		self.sparse = sparse
 		self.sqrt_eps = sqrt_eps
 
-
 class SPSD:
 	# Class for Stochastic Proximal Subgradient Descent for bi-linear sim. learning
 	def __init__(self, params=SPSDParameters()):
@@ -45,14 +44,22 @@ class SPSD:
 		self.W = None
 		self.sqrtW = None
 
-	def generateR (self):
+	def generateR (self, use_all_pos=True):
+		
 		# Generate set of triplets for hinge loss
-		P = [np.asarray(xy[0].todense()).squeeze() for xy in self.L if xy[1]==1]
-		N = [np.asarray(xy[0].todense()).squeeze() for xy in self.L if xy[1]==0]
+		P = np.array([np.asarray(xy[0].todense()).squeeze() for xy in self.L if xy[1]==1])
+		N = np.array([np.asarray(xy[0].todense()).squeeze() for xy in self.L if xy[1]==0])
+		npos, nneg = len(P), len(N)
 
 		if self.params.sampleR == -1:
 			self.R = [(p[0],p[1],n) for p in itertools.permutations(P,2) for n in N]
 			nr.shuffle(self.R)
+		elif use_all_pos:
+			pos_pairs = itertools.permutations(P,2)
+			npos_pairs = npos*(npos-1)
+			nneg_per_pair = int(round(self.params.sampleR/npos_pairs))
+			self.R = [[(p[0],p[1],n) for n in N[nr.permutation(nneg)[:nneg_per_pair]]] for p in pos_pairs]
+			self.R = [pair for plist in self.R for pair in plist]
 		else:
 			# Naive version just for now:
 			self.R = [(p[0],p[1],n) for p in itertools.permutations(P,2) for n in N]

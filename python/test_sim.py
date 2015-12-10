@@ -75,8 +75,6 @@ def test_covtype ():
 	sl_sampleR = 5000
 
 	X,Y = load_covertype(sparse=sparse)
-	import IPython
-	IPython.embed()
 
 	d,n = X.shape
 
