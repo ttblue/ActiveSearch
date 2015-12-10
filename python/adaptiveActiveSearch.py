@@ -68,7 +68,7 @@ class adaptiveKernelAS (ASI.genericAS):
 
 		print("Reinitializing Active Search.")
 
-		self.initialize(self.Xf, init_labels)
+		self.initialize(self.Xf, {i:self.kAS.labels[i] for i in self.kAS.labeled_idxs})
 
 	def firstMessage(self,idx):
 		if self.kAS is None:

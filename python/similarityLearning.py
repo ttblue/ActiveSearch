@@ -145,11 +145,11 @@ class SPSD:
 		# Loop through the data multiple times
 		# Each time, sample positive pairs
 		# For each positive pair, sample negative points to form triplets
-		for epoch in self.params.epochs:
-			pos_pair_inds = [pind for pind in itertools.permutations(xrange(npos),2)[:npairs_per_epoch]]
+		for epoch in xrange(self.params.epochs):
+			pos_pair_inds = [pind for pind in itertools.permutations(xrange(npos),2)][:npairs_per_epoch]
 			for pi1,pi2 in pos_pair_inds:
-				for ni in nr.permutations(nneg)[:nneg_per_pair]:
-					r = (self.X[:,self.Pinds[pi1], self.X[:,self.Pinds[pi2]], self.X[:,self.Ninds[ni]])
+				for ni in nr.permutation(nneg)[:nneg_per_pair]:
+					r = (self.X[:,self.Pinds[pi1]], self.X[:,self.Pinds[pi2]], self.X[:,self.Ninds[ni]])
 					W = self.prox(W - alpha*self.subgradG(W,r), l = alpha*self.params.gamma)
 					itr += 1
 
