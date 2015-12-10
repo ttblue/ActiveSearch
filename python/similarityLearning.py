@@ -136,7 +136,7 @@ class SPSD:
 	# 	self.W = W
 
 	# New version using epochs and more intelligent sampling
-	def runSPSD (self, , nneg_per_pair = 4):
+	def runSPSD (self):
 		# Run the SPSD
 		# if not isinstance(self.params.alpha,list):
 		# 	alphas = [self.params.alpha]*self.nR
