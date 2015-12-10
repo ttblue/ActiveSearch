@@ -12,15 +12,20 @@ def matrix_squeeze(X):
 
 class SPSDParameters:
 	# Parameters for SPSD
-	def __init__(self,	alpha=1, C=1, gamma=1, margin=None, 
-						sampleR=-1, epochs=4, 
+	def __init__(self,	alpha=1, C=1, gamma=1, margin=None, sampleR=-1, 
+						epochs=4, npairs_per_epoch = 100000, nneg_per_pair = 4,
 						verbose=True, sparse=False, sqrt_eps=1e-6):
 		self.alpha = alpha
 		self.C = C
 		self.gamma = gamma
 		self.margin = 1 if margin is None else margin
+		
 		self.sampleR = sampleR
+
 		self.epochs = epochs
+		self.npairs_per_epoch = npairs_per_epoch
+		self.nneg_per_pair = nneg_per_pair
+
 		self.verbose = verbose
 		self.sparse = sparse
 		self.sqrt_eps = sqrt_eps
@@ -131,13 +136,16 @@ class SPSD:
 	# 	self.W = W
 
 	# New version using epochs and more intelligent sampling
-	def runSPSD (self, npairs_per_epoch = 100000, nneg_per_pair = 4):
+	def runSPSD (self, , nneg_per_pair = 4):
 		# Run the SPSD
 		# if not isinstance(self.params.alpha,list):
 		# 	alphas = [self.params.alpha]*self.nR
 		# else: alphas = self.params.alpha
 		npos = len(self.Pinds)
 		nneg = len(self.Ninds)
+
+		npe = self.params.npairs_per_epoch
+		npp = self.params.nneg_per_pair
 
 		alpha = self.params.alpha
 		W = self.W0
@@ -146,9 +154,9 @@ class SPSD:
 		# Each time, sample positive pairs
 		# For each positive pair, sample negative points to form triplets
 		for epoch in xrange(self.params.epochs):
-			pos_pair_inds = [pind for pind in itertools.permutations(xrange(npos),2)][:npairs_per_epoch]
+			pos_pair_inds = [pind for pind in itertools.permutations(xrange(npos),2)][:npe]
 			for pi1,pi2 in pos_pair_inds:
-				for ni in nr.permutation(nneg)[:nneg_per_pair]:
+				for ni in nr.permutation(nneg)[:npp]:
 					r = (self.X[:,self.Pinds[pi1]], self.X[:,self.Pinds[pi2]], self.X[:,self.Ninds[ni]])
 					W = self.prox(W - alpha*self.subgradG(W,r), l = alpha*self.params.gamma)
 					itr += 1
