@@ -76,7 +76,17 @@ def stratified_sample (X, Y, classes, strat_frac=0.1):
 
 	return Xs, Ys
 
+def return_average_positive_neighbors (X, Y, k):
+	Y = np.asarray(Y)
 
+	pos_inds = Y.nonzero()[0]
+	Xpos = X[:,pos_inds]
+
+	posM = np.array(Xpos.T.dot(X).todense())
+	MsimInds = posM.argsort(axis=1)[:,-k:]
+	MsimY =	Y[MsimInds]
+
+	return MsimY.sum(axis=None)/(len(pos_inds)*k)
 
 def test_covtype ():
 
@@ -94,17 +104,18 @@ def test_covtype ():
 	sl_gamma = 0.01
 	sl_margin = 1.
 	sl_sampleR = 5000
-	sl_epochs = 50;
+	sl_epochs = 10;
 	sl_npairs_per_epoch = 20000
 	sl_nneg_per_pair = 1
+	sl_batch_size = 1000
+
 	
 
-	n_samples_pos = 300;
-	n_samples_neg = 20000;
-
-	strat_frac = 0.2
+	strat_frac = 0.001
 	X0,Y0,classes = load_covertype(sparse=sparse)
 	X, Y = stratified_sample(X0, Y0, classes, strat_frac=strat_frac)
+	n_samples_pos = len(Y.nonzero()[0]);
+	n_samples_neg = len((Y == 0).nonzero()[0]);
 
 	d,n = X.shape
 
@@ -117,6 +128,9 @@ def test_covtype ():
 	W0 = np.eye(d)
 	print 'Loaded the data'
 	
+	import IPython
+	IPython.embed()
+
 	init_pt_pos = Y.nonzero()[0][nr.choice(len(Y.nonzero()[0]),n_samples_pos,replace=False)]
 	print 'Sampled the positive data'
 
@@ -127,61 +141,20 @@ def test_covtype ():
 	X_sampled = X[:,idxs]
 	Y_sampled = Y[idxs]
 
-	prms = ASI.Parameters(pi=pi,sparse=sparse, verbose=True, eta=eta)
 	slprms = SL.SPSDParameters(alpha=sl_alpha, C=sl_C, gamma=sl_gamma, margin=sl_margin, 
-		epochs=sl_epochs, npairs_per_epoch=sl_npairs_per_epoch, nneg_per_pair=sl_nneg_per_pair)
-
-	kAS = ASI.kernelAS (prms)
-	aAS = AAS.adaptiveKernelAS(W0, T, prms, slprms)
-
-	# kAS.initialize(X,init_labels={init_pt:1})
-	aAS.initialize(X,init_labels={})
+		epochs=sl_epochs, npairs_per_epoch=sl_npairs_per_epoch, nneg_per_pair=sl_nneg_per_pair, batch_size=sl_batch_size)
 
 	# Now learn the similarity using the sampled data
-	aAS.spsdSL.initialize(X_sampled,Y_sampled,W0,slprms)
-	aAS.spsdSL.runSPSD()
-	W0 = aAS.spsdSL.getW()
+	sl = SL.SPSD()
+	sl.initialize(X_sampled,Y_sampled,W0,slprms)
+	sl.runSPSD()
+	W = sl.getW()
+	sqrtW = sl.getSqrtW()
 
-	# ---------------------------------------------
-	## Now we reinitialize everything so that we can use the above learnt similarity 
-	# to do active search
-	init_pt = Y.nonzero()[0][nr.choice(len(Y.nonzero()[0]),2,replace=False)]
-
-	prms = ASI.Parameters(pi=pi,sparse=sparse, verbose=True, eta=eta)
-	slprms = SL.SPSDParameters(alpha=sl_alpha, C=sl_C, gamma=sl_gamma, margin=sl_margin, 
-		epochs=sl_epochs, npairs_per_epoch=sl_npairs_per_epoch, nneg_per_pair=sl_nneg_per_pair)
-
-	kAS = ASI.kernelAS (prms)
-	aAS = AAS.adaptiveKernelAS(W0, T, prms, slprms)
-
-	# kAS.initialize(X,init_labels={init_pt:1})
-	aAS.initialize(X,init_labels={p:1 for p in init_pt})
-
-	hits1 = [1]
-	hits2 = [1]
-	for i in xrange(K):
-
-		# idx1 = kAS.getNextMessage()
-		idx2 = aAS.getNextMessage()
-
-		# kAS.setLabelCurrent(Y[idx1])
-		aAS.setLabelCurrent(Y[idx2])
-
-		# hits1.append(hits1[-1]+Y[idx1])
-		hits2.append(hits2[-1]+Y[idx2])
-
-	num_hits = hits2[-1];
-
-	fileName = 'results_C_%.2f_gamma_%.4f.npy'%(sl_C,sl_gamma)
-	fname = osp.join('../cvx_results', fileName)
-	np.save(fname, num_hits)	
-
-	fileName = 'sim_C_%.2f_gamma_%.4f.npy'%(sl_C,sl_gamma)
-	fname = osp.join('../cvx_results', fileName)
-	np.save(fname, W0)	
+	X1 = ss.csr_matrix(sqrtW).dot(X)
+	print ('Average Positive for Indentity: ', return_average_positive_neighbors(X, Y, 100))
+	print ('Average Positive for learned Similarity: ', return_average_positive_neighbors(X1, Y, 100))
 	
-	import IPython
-	IPython.embed()
 
 
 if __name__ == '__main__':

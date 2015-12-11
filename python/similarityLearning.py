@@ -13,7 +13,7 @@ def matrix_squeeze(X):
 class SPSDParameters:
 	# Parameters for SPSD
 	def __init__(self,	alpha=1, C=1, gamma=1, margin=None, sampleR=-1, 
-						epochs=4, npairs_per_epoch = 100000, nneg_per_pair = 4,
+						epochs=4, npairs_per_epoch = 100000, nneg_per_pair = 4, batch_size=100,
 						verbose=True, sparse=False, sqrt_eps=1e-6):
 		self.alpha = alpha
 		self.C = C
@@ -117,7 +117,8 @@ class SPSD:
 
 		#return (1/nR) * (W-self.W0) + C*dl
 		#return (W-self.W0) + C*dl
-		return (W-self.W_prev) + C*dl
+		#return (W-self.W_prev) + C*dl
+		return dl
 
 	# Old version --
 
@@ -156,20 +157,44 @@ class SPSD:
 		# For each positive pair, sample negative points to form triplets
 		print ('Starting to learn the similarity')
 		print ('Number of Positive pairs per Epoc: ', npe)
-		self.W_prev = W;
+		self.W_prev = W
+		
 		for epoch in xrange(self.params.epochs):
 			print ('Epoch No. ', epoch, '   Starting...')
-			pos_pair_inds = [pind for pind in itertools.permutations(xrange(npos),2)][:npe]
-			for pi1,pi2 in pos_pair_inds:
+			pos_pair_inds = [pind for pind in itertools.permutations(xrange(npos),2)]
+			nr.shuffle(pos_pair_inds)
+			nBatch = 0
+			subGrad = 0
+			for pi1,pi2 in pos_pair_inds[:npe]:
 				for ni in nr.permutation(nneg)[:npp]:
 					r = (self.X[:,self.Pinds[pi1]], self.X[:,self.Pinds[pi2]], self.X[:,self.Ninds[ni]])
-					W = self.prox(W - alpha*self.subgradG(W,r), l = alpha*self.params.gamma)
-					itr += 1
-					change = W - self.W_prev
-					change_frob = nlg.norm(change, ord='fro')
-					print ('Difference Norm: ', change_frob)
-					print ('Difference Initial: ', nlg.norm(W - self.W0, ord='fro'))
-					self.W_prev = W;
+					nBatch += 1
+					subGrad += self.subgradG(W,r)
+					if(nBatch >= self.params.batch_size):
+						W = self.prox(W - (alpha/nBatch)*subgrad, l = 0)
+						nBatch = 0
+						subGrad = 0
+						change = W - self.W_prev
+						change_frob = nlg.norm(change, ord='fro')
+						print ('Difference Norm: ', change_frob)
+						print ('Difference Initial: ', nlg.norm(W - self.W0, ord='fro'))
+						self.W_prev = W
+						#W = self.prox(W - alpha*self.subgradG(W,r), l = alpha*self.params.gamma)
+						itr += 1
+			if(nBatch > 0):
+				W = self.prox(W - (alpha/nBatch)*subgrad, l = 0)
+				change = W - self.W_prev
+				change_frob = nlg.norm(change, ord='fro')
+				print ('Difference Norm: ', change_frob)
+				print ('Difference Initial: ', nlg.norm(W - self.W0, ord='fro'))
+				self.W_prev = W
+				#W = self.prox(W - alpha*self.subgradG(W,r), l = alpha*self.params.gamma)
+				itr += 1
+
+			
+					
+
+		
 
 		self.W = W
 
