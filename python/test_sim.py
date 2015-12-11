@@ -1,6 +1,7 @@
 from __future__ import division
 import numpy as np, numpy.random as nr, numpy.linalg as nlg
-import scipy as sp, scipy.linalg as slg, scipy.io as sio, scipy.sparse as ss
+import scipy as sp, scipy.linalg as slg, scipy.io as sio
+import scipy.sparse as ss, scipy.sparse.linalg as sslg
 import matplotlib.pyplot as plt
 import time
 import os, os.path as osp
@@ -98,6 +99,12 @@ def test_covtype ():
 	strat_frac = 0.1
 	X0,Y0,classes = load_covertype(sparse=sparse)
 	X, Y = stratified_sample(X0, Y0, classes, strat_frac=strat_frac)
+	cl = 4
+	Y = (Y==cl)
+	d,n = X.shape
+	
+	X_norms = np.sqrt(((X.multiply(X)).sum(axis=0))).A.squeeze()
+	X_normalized = X.dot(ss.spdiags([1/X_norms],[0],n,n))
 	# X,Y,classes = load_stratified_covertype(strat_frac = strat_frac, sparse=sparse)
 	
 	# Test for stratified sampling
@@ -112,9 +119,9 @@ def test_covtype ():
 	# import IPython
 	# IPython.embed()
 
-	cl = 4
-	Y = (Y==cl)
-	d,n = X.shape
+
+	import IPython
+	IPython.embed()
 
 	W0 = np.eye(d)
 	
@@ -126,8 +133,8 @@ def test_covtype ():
 	kAS = ASI.kernelAS (prms)
 	aAS = AAS.adaptiveKernelAS(W0, T, prms, slprms)
 
-	# kAS.initialize(X,init_labels={init_pt:1})
-	aAS.initialize(X,init_labels={p:1 for p in init_pt})
+	# kAS.initialize(X_normalized,init_labels={init_pt:1})
+	aAS.initialize(X_normalized,init_labels={p:1 for p in init_pt})
 
 	hits1 = [1]
 	hits2 = [1]
