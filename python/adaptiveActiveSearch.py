@@ -16,7 +16,7 @@ def matrix_sqrt (W):
 
 class adaptiveKernelAS (ASI.genericAS):
 
-	def __init__ (self, W0, T, ASparams=ASI.Parameters(), SLparams = SL.SPSDParameters()):
+	def __init__ (self, W0, T, ASparams=ASI.Parameters(), SLparams = SL.SPSDParameters(), learn_sim = True):
 
 		self.ASparams = ASparams
 		self.kAS = None
@@ -28,6 +28,7 @@ class adaptiveKernelAS (ASI.genericAS):
 		self.sqrtW = matrix_sqrt(self.W)
 		self.T = T
 
+		self.learn_sim = learn_sim
 		self.epoch_itr = 0
 		self.itr = 0
 
@@ -52,6 +53,9 @@ class adaptiveKernelAS (ASI.genericAS):
 			self.initialized = True
 
 	def relearnSimilarity (self, params=None):
+
+		if not self.learn_sim:
+			return
 
 		X = self.Xf[:, self.kAS.labeled_idxs]
 		Y = self.kAS.labels[self.kAS.labeled_idxs]
@@ -101,7 +105,7 @@ class adaptiveKernelAS (ASI.genericAS):
 		self.kAS.setLabel(idx, lbl, display_iter)		
 
 		# PERFORM RELEARNING
-		if self.itr > self.T:
+		if self.learn_sim and self.itr > self.T:
 			self.relearnSimilarity()
 			self.itr = 0
 			self.epoch_itr += 1
