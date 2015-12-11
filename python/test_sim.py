@@ -14,7 +14,7 @@ np.set_printoptions(suppress=True, precision=5, linewidth=100)
 
 data_dir = osp.join(os.getenv('HOME'),  'Research/Data/ActiveSearch/Kyle/data/KernelAS')
 
-def load_covertype (pos=4, sparse=False):
+def load_covertype (sparse=False):
 
 	fname = osp.join(data_dir, 'covtype.data')
 	fn = open(fname)
@@ -22,6 +22,7 @@ def load_covertype (pos=4, sparse=False):
 
 	r = 54
 
+	classes = []
 	if sparse:
 		Y = []
 		rows = []
@@ -30,7 +31,10 @@ def load_covertype (pos=4, sparse=False):
 
 		c = 0
 		for line in data:
-			Y.append(int(pos==int(line[-1])))
+			y = int(line[-1])
+			Y.append(y)
+			if y not in classes: classes.append(y)
+
 			xvec = np.array(line[:54]).astype(float)
 			xcol = xvec.nonzero()[0].tolist()
 
@@ -48,14 +52,30 @@ def load_covertype (pos=4, sparse=False):
 		Y = []
 		for line in data:
 			X.append(np.asarray(line[:54]).astype(float))
-			Y.append(int(pos==int(line[-1])))
+			y = int(line[-1])
+			Y.append(y)
+			if y not in classes: classes.append(y)
 
 		X = np.asarray(X).T
 
 	fn.close()
 
 	Y = np.asarray(Y)
-	return X,Y
+	return X, Y, classes
+
+def stratified_sample (X, Y, classes, strat_frac=0.1):
+
+	inds = []
+	for c in classes:
+		c_inds = (Y==c).nonzero()[0]
+		c_num = int(len(c_inds)*strat_frac)
+		inds.extend(c_inds[nr.permutation(len(c_inds))[:c_num]].tolist())
+
+	Xs = X[:,inds]
+	Ys = Y[inds]
+
+	return Xs, Ys
+
 
 def test_covtype ():
 
@@ -74,8 +94,26 @@ def test_covtype ():
 	sl_margin = 1.
 	sl_sampleR = 5000
 
-	X,Y = load_covertype(sparse=sparse)
+	
+	strat_frac = 0.1
+	X0,Y0,classes = load_covertype(sparse=sparse)
+	X, Y = stratified_sample(X0, Y0, classes, strat_frac=strat_frac)
+	# X,Y,classes = load_stratified_covertype(strat_frac = strat_frac, sparse=sparse)
+	
+	# Test for stratified sampling
+	# counts0 = {c:(Y0==c).sum() for c in classes}
+	# counts = {c:(Y==c).sum() for c in classes}
+	# s0 = sum(counts0.values())
+	# s = sum(counts.values())
 
+	# frac0 = {c:counts0[c]/s0 for c in classes}
+	# frac = {c:counts[c]/s for c in classes}
+	
+	# import IPython
+	# IPython.embed()
+
+	cl = 4
+	Y = (Y==cl)
 	d,n = X.shape
 
 	W0 = np.eye(d)
