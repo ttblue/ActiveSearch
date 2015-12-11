@@ -9,9 +9,12 @@ import similarityLearning as SL
 
 np.set_printoptions(suppress=True, precision=5, linewidth=100)
 
-def matrix_sqrt (W):
+def matrix_sqrt (W, sqrt_eps=1e-6):
 	# Given PSD W, Finds PSD Q such that W = Q*Q.
 	S,U = nlg.eigh(W) 
+	if not np.allclose(W, W.T) or np.any(S < -sqrt_eps):
+		raise Exception ("Matrix Squareroot did not get PSD matrix.")
+	S = np.where (np.abs(S) < sqrt_eps, 0, S)
 	return U.dot(np.diag(np.sqrt(S))).dot(U.T)
 
 class adaptiveKernelAS (ASI.genericAS):
