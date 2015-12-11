@@ -116,7 +116,8 @@ class SPSD:
 		dl = 0 if (self.evalL(W,r,margin) == 0) else x1.dot(x3.T-x2.T)
 
 		#return (1/nR) * (W-self.W0) + C*dl
-		return (W-self.W0) + C*dl
+		#return (W-self.W0) + C*dl
+		return (W-self.W_prev) + C*dl
 
 	# Old version --
 
@@ -153,13 +154,18 @@ class SPSD:
 		# Loop through the data multiple times
 		# Each time, sample positive pairs
 		# For each positive pair, sample negative points to form triplets
+		print ('Starting to learn the similarity')
+		print ('Number of Positive pairs per Epoc: ', npe)
+		self.W_prev = W;
 		for epoch in xrange(self.params.epochs):
+			print ('Epoch No. ', epoch, '   Starting...')
 			pos_pair_inds = [pind for pind in itertools.permutations(xrange(npos),2)][:npe]
 			for pi1,pi2 in pos_pair_inds:
 				for ni in nr.permutation(nneg)[:npp]:
 					r = (self.X[:,self.Pinds[pi1]], self.X[:,self.Pinds[pi2]], self.X[:,self.Ninds[ni]])
 					W = self.prox(W - alpha*self.subgradG(W,r), l = alpha*self.params.gamma)
 					itr += 1
+					self.W_prev = W;
 
 		self.W = W
 
