@@ -14,7 +14,7 @@ np.set_printoptions(suppress=True, precision=5, linewidth=100)
 
 data_dir = osp.join('/home/sibiv',  'Research/Data/ActiveSearch/Kyle/data/KernelAS')
 
-def load_covertype (pos=4, sparse=False):
+def load_covertype (sparse=False):
 
 	fname = osp.join(data_dir, 'covtype.data')
 	fn = open(fname)
@@ -22,6 +22,7 @@ def load_covertype (pos=4, sparse=False):
 
 	r = 54
 
+	classes = []
 	if sparse:
 		Y = []
 		rows = []
@@ -30,7 +31,10 @@ def load_covertype (pos=4, sparse=False):
 
 		c = 0
 		for line in data:
-			Y.append(int(pos==int(line[-1])))
+			y = int(line[-1])
+			Y.append(y)
+			if y not in classes: classes.append(y)
+
 			xvec = np.array(line[:54]).astype(float)
 			xcol = xvec.nonzero()[0].tolist()
 
@@ -48,14 +52,31 @@ def load_covertype (pos=4, sparse=False):
 		Y = []
 		for line in data:
 			X.append(np.asarray(line[:54]).astype(float))
-			Y.append(int(pos==int(line[-1])))
+			y = int(line[-1])
+			Y.append(y)
+			if y not in classes: classes.append(y)
 
 		X = np.asarray(X).T
 
 	fn.close()
 
 	Y = np.asarray(Y)
-	return X,Y
+	return X, Y, classes
+
+def stratified_sample (X, Y, classes, strat_frac=0.1):
+
+	inds = []
+	for c in classes:
+		c_inds = (Y==c).nonzero()[0]
+		c_num = int(len(c_inds)*strat_frac)
+		inds.extend(c_inds[nr.permutation(len(c_inds))[:c_num]].tolist())
+
+	Xs = X[:,inds]
+	Ys = Y[inds]
+
+	return Xs, Ys
+
+
 
 def test_covtype ():
 
@@ -69,21 +90,29 @@ def test_covtype ():
 	T = 1000
 
 	sl_alpha = 0.001
-	sl_C = 1e-10
-	sl_gamma = 1e-10
+	sl_C = 0.001
+	sl_gamma = 0.01
 	sl_margin = 1.
 	sl_sampleR = 5000
-	sl_epochs = 5;
-	sl_npairs_per_epoch = 10000
+	sl_epochs = 50;
+	sl_npairs_per_epoch = 20000
 	sl_nneg_per_pair = 1
 	
 
-	n_samples_pos = 1000;
-	n_samples_neg = 50000;
+	n_samples_pos = 300;
+	n_samples_neg = 20000;
 
-	X,Y = load_covertype(sparse=sparse)
+	strat_frac = 0.2
+	X0,Y0,classes = load_covertype(sparse=sparse)
+	X, Y = stratified_sample(X0, Y0, classes, strat_frac=strat_frac)
 
 	d,n = X.shape
+
+	X_norms = np.sqrt(((X.multiply(X)).sum(axis=0))).A.squeeze()
+	X = X.dot(ss.spdiags([1/X_norms],[0],n,n)) # Normalization
+
+	cl = 4
+	Y = (Y==cl)
 
 	W0 = np.eye(d)
 	print 'Loaded the data'
@@ -113,11 +142,6 @@ def test_covtype ():
 	aAS.spsdSL.runSPSD()
 	W0 = aAS.spsdSL.getW()
 
-	import IPython
-	IPython.embed()
-
-
-
 	# ---------------------------------------------
 	## Now we reinitialize everything so that we can use the above learnt similarity 
 	# to do active search
@@ -146,6 +170,16 @@ def test_covtype ():
 		# hits1.append(hits1[-1]+Y[idx1])
 		hits2.append(hits2[-1]+Y[idx2])
 
+	num_hits = hits2[-1];
+
+	fileName = 'results_C_%.2f_gamma_%.4f.npy'%(sl_C,sl_gamma)
+	fname = osp.join('../cvx_results', fileName)
+	np.save(fname, num_hits)	
+
+	fileName = 'sim_C_%.2f_gamma_%.4f.npy'%(sl_C,sl_gamma)
+	fname = osp.join('../cvx_results', fileName)
+	np.save(fname, W0)	
+	
 	import IPython
 	IPython.embed()
 
