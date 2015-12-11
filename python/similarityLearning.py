@@ -165,6 +165,10 @@ class SPSD:
 					r = (self.X[:,self.Pinds[pi1]], self.X[:,self.Pinds[pi2]], self.X[:,self.Ninds[ni]])
 					W = self.prox(W - alpha*self.subgradG(W,r), l = alpha*self.params.gamma)
 					itr += 1
+					change = W - self.W_prev
+					change_frob = nlg.norm(change, ord='fro')
+					print ('Difference Norm: ', change_frob)
+					print ('Difference Initial: ', nlg.norm(W - self.W0, ord='fro'))
 					self.W_prev = W;
 
 		self.W = W
