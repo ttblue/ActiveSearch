@@ -77,6 +77,18 @@ def stratified_sample (X, Y, classes, strat_frac=0.1):
 
 	return Xs, Ys
 
+def return_average_positive_neighbors (X, Y, k):
+	Y = np.asarray(Y)
+
+	pos_inds = Y.nonzero()[0]
+	Xpos = X[:,pos_inds]
+
+	posM = np.array(Xpos.T.dot(X).todense())
+	MsimInds = posM.argsort(axis=1)[:,-k:]
+	MsimY =	Y[MsimInds]
+
+	return MsimY.sum(axis=None)/(len(pos_inds)*k)
+
 
 def test_covtype ():
 
