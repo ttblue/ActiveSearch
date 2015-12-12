@@ -19,7 +19,7 @@ def matrix_sqrt (W, sqrt_eps=1e-6):
 
 class adaptiveKernelAS (ASI.genericAS):
 
-	def __init__ (self, W0, T, ASparams=ASI.Parameters(), SLparams = SL.SPSDParameters(), learn_sim = True):
+	def __init__ (self, W0, T, ASparams=ASI.Parameters(), SLparams = SL.SPSDParameters(), learn_sim = True, from_all_data=False):
 
 		self.ASparams = ASparams
 		self.kAS = None
@@ -39,6 +39,9 @@ class adaptiveKernelAS (ASI.genericAS):
 		self.start_point = None
 		self.Xf = None
 
+		self.from_all_data = from_all_data
+		self.recent_labeled_idxs = []
+
 	def initialize(self, Xf, init_labels = {}):
 		# Reset self.kAS
 		if self.Xf is None:
@@ -55,13 +58,23 @@ class adaptiveKernelAS (ASI.genericAS):
 			self.start_point = self.kAS.start_point
 			self.initialized = True
 
-	def relearnSimilarity (self, params=None):
+	def relearnSimilarity (self):
 
 		if not self.learn_sim:
 			return
 
-		X = self.Xf[:, self.kAS.labeled_idxs]
-		Y = self.kAS.labels[self.kAS.labeled_idxs]
+		if self.from_all_data:
+			X = self.Xf[:, self.kAS.labeled_idxs]
+			Y = self.kAS.labels[self.kAS.labeled_idxs]
+			if self.epoch_itr <= 0:
+				params = self.SLparams.copy()
+				params.C1 = 0
+				params.C2 = 1
+			else:
+				params = self.SLparams
+		else:
+			X = self.Xf[:, self.recent_labeled_idxs]
+			Y = self.kAS.labels[self.recent_labeled_idxs]
 
 		print("Running SPSD for relearning similarity.")
 
@@ -105,11 +118,14 @@ class adaptiveKernelAS (ASI.genericAS):
 			raise Exception ("Has not been initialized.")
 		self.itr += 1
 		display_iter = self.epoch_itr * self.T + self.itr
-		self.kAS.setLabel(idx, lbl, display_iter)		
-
+		self.kAS.setLabel(idx, lbl, display_iter)
+		if self.from_all_data:		
+			self.recent_labeled_idxs.append(idx)
 		# PERFORM RELEARNING
 		if self.learn_sim and self.itr > self.T:
 			self.relearnSimilarity()
+			if self.from_all_data:
+				self.recent_labeled_idxs = []
 			self.itr = 0
 			self.epoch_itr += 1
 
@@ -121,6 +137,13 @@ class adaptiveKernelAS (ASI.genericAS):
 	def resetLabel (self, idx, lbl):
 		if self.kAS is None:
 			raise Exception ("Has not been initialized.")
+		ret = self.kAS.labels[idx]
+		if self.kAS.labels[idx] == -1:
+			self.setLabel(idx, lbl)
+			return ret 
+		elif self.kAS.labels[idx] == lbl:
+			print("Already the same value!")
+			return ret
 		return self.kAS.resetLabel(idx, lbl)
 
 	def getNextMessage (self):

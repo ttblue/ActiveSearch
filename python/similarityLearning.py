@@ -12,24 +12,34 @@ def matrix_squeeze(X):
 
 class SPSDParameters:
 	# Parameters for SPSD
-	def __init__(self,	alpha=1, C=1, gamma=1, margin=None, sampleR=-1, batch_size=100,
-						epochs=4, npairs_per_epoch = 100000, nneg_per_pair = 4, 
-						verbose=True, sparse=False, sqrt_eps=1e-6):
+	def __init__(self, alpha=1, C1=0, C2=1, gamma=1, margin=None, 
+			sampleR=-1, batch_size=100,
+			epochs=4, npairs_per_epoch = 100000, nneg_per_pair = 4, 
+			verbose=True, sparse=False, sqrt_eps=1e-6):
+
 		self.alpha = alpha
-		self.C = C
+		self.C1 = C1
+		self.C2 = C2
+		self.epochs = epochs
 		self.gamma = gamma
 		self.margin = 1 if margin is None else margin
 		self.batch_size = batch_size
 
 		self.sampleR = sampleR
 
-		self.epochs = epochs
+		
 		self.npairs_per_epoch = npairs_per_epoch
 		self.nneg_per_pair = nneg_per_pair
 
 		self.verbose = verbose
 		self.sparse = sparse
 		self.sqrt_eps = sqrt_eps
+
+	def copy(self):
+		return SPSDParamters(self.alpha, self.C1, self.C2, self.gamma, self.margin, 
+			self.sampleR, self.batch_size,
+			self.epochs, self.npairs_per_epoch, self.nneg_per_pair, 
+			self.verbose, self.sparse, self.sqrt_eps)
 
 class SPSD:
 	# Class for Stochastic Proximal Subgradient Descent for bi-linear sim. learning
@@ -103,14 +113,15 @@ class SPSD:
 		if margin is None: margin = self.params.margin
 		return np.max([0, margin - r[0].T.dot(W).dot(r[1]) + r[0].T.dot(W).dot(r[2])])
 
-	def subgradG(self, W, r, nR=None, C=None, margin=None):
+	def subgradG(self, W, r, nR=None, C1=None, C2=None, margin=None):
 	# def subgradG(self, W, r, nR=None, C=None, margin=None):
 		# Evaluate the sub-gradient of smooth part of loss function:
 		# 		g(W,r) = 1/(2|R|) ||W-W_0||^2_F + C*l(W,r)
 		# where l(W,(x1,x2,x3)) = max{0, 1-x1^T*W*x2 + x1^T*W*x3}
 		# We get: dg(W,r) = 1/|R| (W-W_0) +C dl (W,r)
 		if margin is None: margin = self.params.margin
-		if C is None: C = self.params.C
+		if C1 is None: C1 = self.params.C1
+		if C2 is None: C2 = self.params.C2
 		# if nR is None: nR = self.nR
 
 		x1,x2,x3 = [np.atleast_2d(x).T for x in r]
@@ -119,7 +130,7 @@ class SPSD:
 		#return (1/nR) * (W-self.W0) + C*dl
 		#return (W-self.W0) + C*dl
 		#return (W-self.W_prev) + C*dl
-		return dl
+		return C2*dl + C1*(W - self.W0)
 
 	# Old version --
 
