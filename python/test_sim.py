@@ -17,12 +17,15 @@ import IPython
 
 np.set_printoptions(suppress=True, precision=5, linewidth=100)
 
-data_dir = osp.join(os.getenv('HOME'),  'Research/Data/ActiveSearch/Kyle/data/KernelAS')
-results_dir = osp.join('/home/sibiv',  'Classes/10-725/project/ActiveSearch/results')
+# data_dir = osp.join(os.getenv('HOME'),  'Research/Data/ActiveSearch/Kyle/data/KernelAS')
+# results_dir = osp.join(os.getenv('HOME'),  'Classes/10-725/project/ActiveSearch/results')
+data_dir = os.getenv('AS_DATA_DIR')
+results_dir = os.getenv('AS_RESULTS_DIR')
 
-def load_covertype (sparse=True):
+def load_covertype (sparse=True, fname=None):
 
-	fname = osp.join(data_dir, 'covtype.data')
+	if fname is None:
+		fname = osp.join(data_dir, 'covtype.data')
 	fn = open(fname,'r')
 	data = csv.reader(fn)
 
@@ -65,13 +68,13 @@ def load_covertype (sparse=True):
 		X = np.asarray(X).T
 
 	fn.close()
-
 	Y = np.asarray(Y)
 	return X, Y, classes
 
-def load_higgs (sparse=True):
+def load_higgs (sparse=True, fname = None):
 
-	fname = osp.join(data_dir, 'HIGGS.csv')
+	if fname is None:
+		fname = osp.join(data_dir, 'HIGGS.csv')
 	fn = open(fname,'r')
 	data = csv.reader(fn)
 
@@ -129,8 +132,23 @@ def stratified_sample (X, Y, classes, strat_frac=0.1):
 
 	Xs = X[:,inds]
 	Ys = Y[inds]
-
 	return Xs, Ys
+
+
+def change_prev (X,Y,prev=0.05):
+	# Changes the prevalence of positves to 0.05
+	pos = Y.nonzero()[0]
+	neg = (Y==0).nonzero()[0]
+
+	npos = len(pos)
+	nneg = len(neg)
+	npos_prev = prev*nneg/(1-prev)#int(round(npos*prev))
+
+	prev_idxs = pos[nr.permutation(npos)[:npos_prev]].tolist() + neg.tolist()
+	nr.shuffle(prev_idxs)
+	
+	return X[:,prev_idxs], Y[prev_idxs]
+	
 
 def return_average_positive_neighbors (X, Y, k):
 	Y = np.asarray(Y)
@@ -239,4 +257,5 @@ def test_covtype ():
 
 if __name__ == '__main__':
 	#test_covtype()
-	X,Y,C = load_higgs()
+	# X,Y,C = load_higgs()
+	pass
