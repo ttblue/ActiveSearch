@@ -12,14 +12,15 @@ def matrix_squeeze(X):
 
 class SPSDParameters:
 	# Parameters for SPSD
-	def __init__(self,	alpha=1, C=1, gamma=1, margin=None, sampleR=-1, 
-						epochs=4, npairs_per_epoch = 100000, nneg_per_pair = 4, batch_size=100,
+	def __init__(self,	alpha=1, C=1, gamma=1, margin=None, sampleR=-1, batch_size=100,
+						epochs=4, npairs_per_epoch = 100000, nneg_per_pair = 4, 
 						verbose=True, sparse=False, sqrt_eps=1e-6):
 		self.alpha = alpha
 		self.C = C
 		self.gamma = gamma
 		self.margin = 1 if margin is None else margin
-		
+		self.batch_size = batch_size
+
 		self.sampleR = sampleR
 
 		self.epochs = epochs
@@ -113,7 +114,7 @@ class SPSD:
 		# if nR is None: nR = self.nR
 
 		x1,x2,x3 = [np.atleast_2d(x).T for x in r]
-		dl = 0 if (self.evalL(W,r,margin) == 0) else x1.dot(x3.T-x2.T)
+		dl = 0 if (self.evalL(W,r,margin) <= 0) else x1.dot(x3.T-x2.T)
 
 		#return (1/nR) * (W-self.W0) + C*dl
 		#return (W-self.W0) + C*dl
@@ -160,7 +161,7 @@ class SPSD:
 		self.W_prev = W
 		
 		for epoch in xrange(self.params.epochs):
-			print ('Epoch No. ', epoch, '   Starting...')
+			print ('Epoch No. ', epoch+1, '   Starting...')
 			pos_pair_inds = [pind for pind in itertools.permutations(xrange(npos),2)]
 			nr.shuffle(pos_pair_inds)
 			nBatch = 0
@@ -171,26 +172,25 @@ class SPSD:
 					nBatch += 1
 					subGrad += self.subgradG(W,r)
 					if(nBatch >= self.params.batch_size):
-						W = self.prox(W - (alpha/nBatch)*subgrad, l = 0)
+						W = self.prox(W - alpha*subGrad, l = alpha*self.params.gamma)
 						nBatch = 0
 						subGrad = 0
-						change = W - self.W_prev
-						change_frob = nlg.norm(change, ord='fro')
-						print ('Difference Norm: ', change_frob)
-						print ('Difference Initial: ', nlg.norm(W - self.W0, ord='fro'))
+						# change = W - self.W_prev
+						# change_frob = nlg.norm(change, ord='fro')
+						# print ('Difference Norm: ', change_frob)
+						# print ('Difference Initial: ', nlg.norm(W - self.W0, ord='fro'))
 						self.W_prev = W
 						#W = self.prox(W - alpha*self.subgradG(W,r), l = alpha*self.params.gamma)
 						itr += 1
 			if(nBatch > 0):
-				W = self.prox(W - (alpha/nBatch)*subgrad, l = 0)
-				change = W - self.W_prev
-				change_frob = nlg.norm(change, ord='fro')
-				print ('Difference Norm: ', change_frob)
-				print ('Difference Initial: ', nlg.norm(W - self.W0, ord='fro'))
+				W = self.prox(W - alpha*subGrad, l = alpha*self.params.gamma)
+				# change = W - self.W_prev
+				# change_frob = nlg.norm(change, ord='fro')
+				# print ('Difference Norm: ', change_frob)
+				# print ('Difference Initial: ', nlg.norm(W - self.W0, ord='fro'))
 				self.W_prev = W
 				#W = self.prox(W - alpha*self.subgradG(W,r), l = alpha*self.params.gamma)
 				itr += 1
-
 			
 					
 

@@ -65,7 +65,7 @@ class adaptiveKernelAS (ASI.genericAS):
 
 		print("Running SPSD for relearning similarity.")
 
-		self.spsdSL.initialize(X,Y, self.W,params)
+		self.spsdSL.initialize(X,Y, self.W, params)
 		self.spsdSL.runSPSD()
 		
 		print("Finished learning new similarity.")
