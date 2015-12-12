@@ -20,10 +20,10 @@ np.set_printoptions(suppress=True, precision=5, linewidth=100)
 data_dir = osp.join(os.getenv('HOME'),  'Research/Data/ActiveSearch/Kyle/data/KernelAS')
 results_dir = osp.join('/home/sibiv',  'Classes/10-725/project/ActiveSearch/results')
 
-def load_covertype (sparse=False):
+def load_covertype (sparse=True):
 
 	fname = osp.join(data_dir, 'covtype.data')
-	fn = open(fname)
+	fn = open(fname,'r')
 	data = csv.reader(fn)
 
 	r = 54
@@ -37,11 +37,11 @@ def load_covertype (sparse=False):
 
 		c = 0
 		for line in data:
-			y = int(line[-1])
+			y = int(float(line[-1]))
 			Y.append(y)
 			if y not in classes: classes.append(y)
 
-			xvec = np.array(line[:54]).astype(float)
+			xvec = np.array(line[:r]).astype(float)
 			xcol = xvec.nonzero()[0].tolist()
 
 			rows.extend(xcol)
@@ -58,7 +58,7 @@ def load_covertype (sparse=False):
 		Y = []
 		for line in data:
 			X.append(np.asarray(line[:54]).astype(float))
-			y = int(line[-1])
+			y = int(float(line[-1]))
 			Y.append(y)
 			if y not in classes: classes.append(y)
 
@@ -68,6 +68,56 @@ def load_covertype (sparse=False):
 
 	Y = np.asarray(Y)
 	return X, Y, classes
+
+def load_higgs (sparse=True):
+
+	fname = osp.join(data_dir, 'HIGGS.csv')
+	fn = open(fname,'r')
+	data = csv.reader(fn)
+
+	r = 28
+
+	classes = []
+	if sparse:
+		Y = []
+		rows = []
+		cols = []
+		sdat = []
+
+		c = 0
+		for line in data:
+			y = int(float(line[0]))
+			Y.append(y)
+			if y not in classes: classes.append(y)
+
+			xvec = np.array(line[1:]).astype(float)
+			xcol = xvec.nonzero()[0].tolist()
+
+			rows.extend(xcol)
+			cols.extend([c]*len(xcol))
+			sdat.extend(xvec[xcol].tolist())
+
+			c += 1
+
+		X = ss.csr_matrix((sdat, (rows, cols)), shape=(r, c))
+
+	else:
+
+		X = []
+		Y = []
+		for line in data:
+			X.append(np.asarray(line[1:]).astype(float))
+			y = int(float(line[0]))
+			Y.append(y)
+			if y not in classes: classes.append(y)
+
+		X = np.asarray(X).T
+
+	fn.close()
+
+	Y = np.asarray(Y)
+	return X, Y, classes
+
 
 def stratified_sample (X, Y, classes, strat_frac=0.1):
 
@@ -188,4 +238,5 @@ def test_covtype ():
 
 
 if __name__ == '__main__':
-	test_covtype()
+	#test_covtype()
+	X,Y,C = load_higgs()
