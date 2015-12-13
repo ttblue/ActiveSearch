@@ -286,12 +286,12 @@ def test_higgs (seed=0):
 	
 	# Stratified sampling
 	strat_frac = 1.0
-	X0,Y0,classes = load_higgs(sparse=sparse)
-	if strat_frac >= 1.0:
-		X, Y = X0, Y0
-	else:
-		X, Y = stratified_sample(X0, Y0, classes, strat_frac=strat_frac)
+	X,Y,classes = load_higgs(sparse=sparse)
+	if strat_frac < 1.0:
+		X, Y = stratified_sample(X, Y, classes, strat_frac=strat_frac)
 	d,n = X.shape
+
+        IPython.embed()
 
 	# Changing prevalence of +
 	prev = 0.005
@@ -367,8 +367,10 @@ if __name__ == '__main__':
 
 	seeds = nr.choice(200,num_expts,replace=False)
 
-	if num_expts == 1:
-		test_funcs[dset](seeds[0])
-	else:
-		pl = Pool(num_expts)
-		pl.map(test_funcs[dset], seeds)
+        if num_expts == 1:
+                print ('Running 1 experiment')
+                test_funcs[dset](seeds[0])
+        else:
+                print ('Running %i experiments'%num_expts)
+                pl = Pool(num_expts)
+                pl.map(test_funcs[dset], seeds)
