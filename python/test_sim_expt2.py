@@ -291,7 +291,6 @@ def test_higgs (seed=0):
 	print ('Time taken to load %.2fs'%(time.time()-t1))
 	if strat_frac < 1.0:
 		X, Y = stratified_sample(X, Y, classes, strat_frac=strat_frac)
-	IPython.embed()
 
 	# Changing prevalence of +
 	prev = 0.005
