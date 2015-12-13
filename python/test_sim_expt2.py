@@ -365,10 +365,10 @@ if __name__ == '__main__':
 
 	seeds = nr.choice(200,num_expts,replace=False)
 
-		if num_expts == 1:
-				print ('Running 1 experiment')
-				test_funcs[dset](seeds[0])
-		else:
-				print ('Running %i experiments'%num_expts)
-				pl = Pool(num_expts)
-				pl.map(test_funcs[dset], seeds)
+	if num_expts == 1:
+		print ('Running 1 experiment')
+		test_funcs[dset](seeds[0])
+	else:
+		print ('Running %i experiments'%num_expts)
+		pl = Pool(num_expts)
+		pl.map(test_funcs[dset], seeds)
