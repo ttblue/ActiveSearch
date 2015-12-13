@@ -150,24 +150,37 @@ def change_prev (X,Y,prev=0.05):
 	return X[:,prev_idxs], Y[prev_idxs]
 	
 
-def return_average_positive_neighbors (X, Y, k):
+def return_average_positive_neighbors (X, Y, k, use_for=True):
 	Y = np.asarray(Y)
 
 	pos_inds = Y.nonzero()[0]
-	Xpos = X[:,pos_inds]
 	npos = len(pos_inds)
 
-	posM = np.array(Xpos.T.dot(X).todense())
-	posM[xrange(npos), pos_inds] = -np.inf
-	MsimInds = posM.argsort(axis=1)[:,-k-1:]
+	if use_for:
+		MsimY = []
+		ii = npos
+		for pind in pos_inds:
+			print (ii)
+			ii -= 1
+			posM = np.array(X[:,pind].T.dot(X).todense()).squeeze()
+			posM[pind] = -np.inf
+			MsimInds = posM.argsort()[-k:]
+			MsimY.append(sum(Y[MsimInds]))
+		return sum(MsimY)/(npos*k)
 
-	MsimY =	Y[MsimInds]
+	else:
+		Xpos = X[:,pos_inds]
+		posM = np.array(Xpos.T.dot(X).todense())
+		posM[xrange(npos), pos_inds] = -np.inf
+		MsimInds = posM.argsort(axis=1)[:,-k:]
 
-	return MsimY.sum(axis=None)/(npos*k)
+		MsimY =	Y[MsimInds]
+
+		return MsimY.sum(axis=None)/(npos*k)
 
 
 def test_covtype ():
-	seed = 0
+	seed = 1
 	nr.seed(seed)
 
 	verbose = True
@@ -178,7 +191,7 @@ def test_covtype ():
 	T = 200
 
 	sl_alpha = 0.01
-	sl_C1 = 0.
+	sl_C1 = 1.0
 	sl_C2 = 1.0
 	sl_gamma = 0.01
 	sl_margin = 0.01
@@ -221,17 +234,17 @@ def test_covtype ():
 	hits1 = [2]
 	hits2 = [2]
 
-	for i in xrange(K):
+	# for i in xrange(K):
 
-		idx1 = kAS.getNextMessage()
-		idx2 = aAS.getNextMessage()
+	# 	idx1 = kAS.getNextMessage()
+	# 	idx2 = aAS.getNextMessage()
 
-		kAS.setLabelCurrent(Y[idx1])
-		aAS.setLabelCurrent(Y[idx2])
-		print('')
+	# 	kAS.setLabelCurrent(Y[idx1])
+	# 	aAS.setLabelCurrent(Y[idx2])
+	# 	print('')
 
-		hits1.append(hits1[-1]+Y[idx1])
-		hits2.append(hits2[-1]+Y[idx2])
+	# 	hits1.append(hits1[-1]+Y[idx1])
+	# 	hits2.append(hits2[-1]+Y[idx2])
 
 	# fname = '%s/aas_stratfrac_%.3f_K_%i_T_%i_alpha_%.3f_gamma_%.3f_epochs_%i_batchsize_%i.npy'
 	# fname = fname%(results_dir, strat_frac, K, T, sl_alpha, sl_gamma, sl_epochs, sl_batch_size)
@@ -254,7 +267,7 @@ def test_covtype ():
 	plt.show()
 
 
-	IPython.embed()
+	# IPython.embed()
 
 def test_covtype2 ():
 	seed = 0
@@ -350,9 +363,9 @@ def test_covtype2 ():
 	plt.show()
 
 
-	IPython.embed()
+	# IPython.embed()
 
 if __name__ == '__main__':
-	test_covtype()
+	# test_covtype()
 	# X,Y,C = load_higgs()
-	# pass
+	pass
