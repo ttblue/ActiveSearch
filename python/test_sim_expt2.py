@@ -186,7 +186,7 @@ def return_average_positive_neighbors (X, Y, k, use_for=True):
 
 
 def test_covtype (seed=0):
-	nr.seed(seed)
+	# nr.seed(seed)
 
 	verbose = True
 	sparse = True
@@ -223,7 +223,8 @@ def test_covtype (seed=0):
 
 	W0 = np.eye(d)
 	
-	init_pt = Y.nonzero()[0][nr.choice(len(Y.nonzero()[0]),2,replace=False)]
+        num_init = 10
+	init_pt = Y.nonzero()[0][nr.choice(len(Y.nonzero()[0]),num_init,replace=False)]
 
 	prms = ASI.Parameters(pi=pi,sparse=sparse, verbose=True, eta=eta)
 	slprms = SL.SPSDParameters(alpha=sl_alpha, C1=sl_C1, C2=sl_C2, gamma=sl_gamma, margin=sl_margin, 
@@ -264,7 +265,7 @@ def test_covtype (seed=0):
 
 
 def test_higgs (seed=0):
-	nr.seed(seed)
+	# nr.seed(seed)
 
 	verbose = True
 	sparse = True
@@ -273,15 +274,15 @@ def test_higgs (seed=0):
 	K = 999
 	T = 200
 
-	sl_alpha = 0.01
+	sl_alpha = 0.05
 	sl_C1 = 0.0
 	sl_C2 = 1.0
 	sl_gamma = 0.01
 	sl_margin = 0.01
 	sl_sampleR = 5000
-	sl_epochs = 30
+	sl_epochs = 50
 	sl_npairs_per_epoch = 30000
-	sl_nneg_per_pair = 1
+	sl_nneg_per_pair = 5
 	sl_batch_size = 1000
 	
 	# Stratified sampling
@@ -362,12 +363,12 @@ if __name__ == '__main__':
 
 	test_funcs = {1:test_covtype, 2:test_higgs}
 
-	seeds = nr.choice(200,num_expts,replace=False)
-
+	# seeds = nr.choice(200,num_expts,replace=False)
+	seeds = range(num_expts)
 	if num_expts == 1:
 		print ('Running 1 experiment')
 		test_funcs[dset](seeds[0])
 	else:
 		print ('Running %i experiments'%num_expts)
 		pl = Pool(num_expts)
-		pl.map(test_funcs[dset], seeds)
+		pl.map(test_funcs[dset],seeds)
