@@ -366,5 +366,9 @@ if __name__ == '__main__':
 	test_funcs = {1:test_covtype, 2:test_higgs}
 
 	seeds = nr.choice(200,num_expts,replace=False)
-	pl = Pool(num_expts)
-	pl.map(test_funcs[dset], seeds)
+
+	if num_expts == 1:
+		test_funcs[dset](seeds[0])
+	else:
+		pl = Pool(num_expts)
+		pl.map(test_funcs[dset], seeds)
