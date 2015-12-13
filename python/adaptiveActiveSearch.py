@@ -55,6 +55,7 @@ class adaptiveKernelAS (ASI.genericAS):
 		self.kAS.initialize (Xf, init_labels)
 
 		if not self.initialized or self.start_point is None:
+			self.recent_labeled_idxs = init_labels.keys()
 			self.start_point = self.kAS.start_point
 			self.initialized = True
 
@@ -66,13 +67,14 @@ class adaptiveKernelAS (ASI.genericAS):
 		if self.from_all_data:
 			X = self.Xf[:, self.kAS.labeled_idxs]
 			Y = self.kAS.labels[self.kAS.labeled_idxs]
+			params = None
+		else:
 			if self.epoch_itr <= 0:
 				params = self.SLparams.copy()
 				params.C1 = 0
 				params.C2 = 1
 			else:
 				params = self.SLparams
-		else:
 			X = self.Xf[:, self.recent_labeled_idxs]
 			Y = self.kAS.labels[self.recent_labeled_idxs]
 
@@ -83,8 +85,9 @@ class adaptiveKernelAS (ASI.genericAS):
 		
 		print("Finished learning new similarity.")
 		
-		self.W = self.spsdSL.getW()
-		self.sqrtW = self.spsdSL.getSqrtW()
+		if self.spsdSL.check_has_learned():
+			self.W = self.spsdSL.getW()
+			self.sqrtW = self.spsdSL.getSqrtW()
 
 		print("Reinitializing Active Search.")
 
@@ -119,12 +122,12 @@ class adaptiveKernelAS (ASI.genericAS):
 		self.itr += 1
 		display_iter = self.epoch_itr * self.T + self.itr
 		self.kAS.setLabel(idx, lbl, display_iter)
-		if self.from_all_data:		
+		if not self.from_all_data:		
 			self.recent_labeled_idxs.append(idx)
 		# PERFORM RELEARNING
-		if self.learn_sim and self.itr > self.T:
+		if self.learn_sim and self.itr >= self.T:
 			self.relearnSimilarity()
-			if self.from_all_data:
+			if not self.from_all_data and self.spsdSL.check_has_learned():
 				self.recent_labeled_idxs = []
 			self.itr = 0
 			self.epoch_itr += 1

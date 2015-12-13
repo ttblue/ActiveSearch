@@ -36,7 +36,7 @@ class SPSDParameters:
 		self.sqrt_eps = sqrt_eps
 
 	def copy(self):
-		return SPSDParamters(self.alpha, self.C1, self.C2, self.gamma, self.margin, 
+		return SPSDParameters(self.alpha, self.C1, self.C2, self.gamma, self.margin, 
 			self.sampleR, self.batch_size,
 			self.epochs, self.npairs_per_epoch, self.nneg_per_pair, 
 			self.verbose, self.sparse, self.sqrt_eps)
@@ -61,43 +61,10 @@ class SPSD:
 		
 		self.W0 = W0
 
-		# self.generateR ()
-		# self.initializePosNeg ()
-
 		self.W = None
 		self.sqrtW = None
 
-	# def generateR (self, use_all_pos=True):
-	# 	# NOT USING THIS FUNCTION
-	# 	# Generate set of triplets for hinge loss
-	# 	P = np.array([np.asarray(xy[0].todense()).squeeze() for xy in self.L if xy[1]==1])
-	# 	N = np.array([np.asarray(xy[0].todense()).squeeze() for xy in self.L if xy[1]==0])
-	# 	npos, nneg = len(P), len(N)
-
-	# 	if self.params.sampleR == -1:
-	# 		self.R = [(p[0],p[1],n) for p in itertools.permutations(P,2) for n in N]
-	# 		nr.shuffle(self.R)
-	# 	elif use_all_pos:
-	# 		pos_pairs = itertools.permutations(P,2)
-	# 		npos_pairs = npos*(npos-1)
-	# 		nneg_per_pair = int(round(self.params.sampleR/npos_pairs))
-	# 		self.R = [[(p[0],p[1],n) for n in N[nr.permutation(nneg)[:nneg_per_pair]]] for p in pos_pairs]
-	# 		self.R = [pair for plist in self.R for pair in plist]
-	# 	else:
-	# 		# Naive version just for now:
-	# 		self.R = [(p[0],p[1],n) for p in itertools.permutations(P,2) for n in N]
-	# 		sample_inds = nr.permutation(len(self.R))[:self.params.sampleR]
-	# 		self.R = [self.R[i] for i in sample_inds]
-
-	# 	self.nR = len(self.R)
-	# 	if self.params.verbose:
-	# 		print ("Number of triplets: %i\n"%self.nR)
-
-	# def initializePosNeg (self):
-	# 	# self.P = np.array([np.asarray(xy[0].todense()).squeeze() for xy in self.L if xy[1]==1])
-	# 	# self.N = np.array([np.asarray(xy[0].todense()).squeeze() for xy in self.L if xy[1]==0])
-	# 	# self.P = np.array([np.asarray(self.X[:,i].todense()).squeeze() for i in self.Y.nonzero()[0])
-	# 	# self.N = np.array([np.asarray(self.X[i].todense()).squeeze() for i in (self.Y==0).nonzero()[0])
+		self.has_learned = False
 
 	def prox (self, M, l=None):
 		# Evaluate the prox operator for nuclear norm projected onto PSD matrices
@@ -122,32 +89,12 @@ class SPSD:
 		if margin is None: margin = self.params.margin
 		if C1 is None: C1 = self.params.C1
 		if C2 is None: C2 = self.params.C2
-		# if nR is None: nR = self.nR
 
 		x1,x2,x3 = [np.atleast_2d(x).T for x in r]
 		dl = 0 if (self.evalL(W,r,margin) <= 0) else x1.dot(x3.T-x2.T)
 
-		#return (1/nR) * (W-self.W0) + C*dl
-		#return (W-self.W0) + C*dl
-		#return (W-self.W_prev) + C*dl
-		return C2*dl + C1*(W - self.W0)
+		return C1*(W - self.W0) + C2*dl
 
-	# Old version --
-
-	# def runSPSD (self):
-	# 	# Run the SPSD
-	# 	if not isinstance(self.params.alpha,list):
-	# 		alphas = [self.params.alpha]*self.nR
-	# 	else: alphas = self.params.alpha
-
-	# 	W = self.W0 # or maybe I?
-	# 	itr = 0
-	# 	for r,alpha in zip(self.R,alphas):
-	# 		W = self.prox(W - alpha*self.subgradG(W,r), l = alpha*self.params.gamma)
-	# 		# if self.params.verbose:
-	# 		# 	print ("Iteration %i of SPSD.\n"%itr)
-	# 		itr += 1
-	# 	self.W = W
 
 	# New version using epochs and more intelligent sampling
 	def runSPSD (self):
@@ -157,6 +104,13 @@ class SPSD:
 		# else: alphas = self.params.alpha
 		npos = len(self.Pinds)
 		nneg = len(self.Ninds)
+
+		if npos < 2 or nneg < 1:
+			# Our iterations won't work with this:
+			# We need at least 2 positives and 1 negative
+			self.has_learned = False # just to stay safe
+			self.W = self.W0
+			return
 
 		npe = self.params.npairs_per_epoch
 		npp = self.params.nneg_per_pair
@@ -168,8 +122,10 @@ class SPSD:
 		# Each time, sample positive pairs
 		# For each positive pair, sample negative points to form triplets
 		print ('Starting to learn the similarity')
-		print ('Number of Positive pairs per Epoc: ', npe)
+		# print ('Number of Positive pairs per Epoc: ', npe)
 		self.W_prev = W
+
+		print ('C1: %f\nC2: %.3f\nnumPOS: %i\nnumNEG: %i'%(self.params.C1, self.params.C2, npos, nneg))
 		
 		for epoch in xrange(self.params.epochs):
 			print ('Epoch No. ', epoch+1, '   Starting...')
@@ -202,13 +158,12 @@ class SPSD:
 				self.W_prev = W
 				#W = self.prox(W - alpha*self.subgradG(W,r), l = alpha*self.params.gamma)
 				itr += 1
-			
-					
-
 		
-
+		self.has_learned = True
 		self.W = W
 
+	def check_has_learned (self):
+		return self.has_learned
 
 	def getW (self):
 		# Get matrix W after SPGD

@@ -174,11 +174,12 @@ def test_covtype ():
 	sparse = True
 	pi = 0.5
 	eta = 0.7
-	K = 1000
+	K = 999
 	T = 200
 
 	sl_alpha = 0.01
-	sl_C = 0.0
+	sl_C1 = 0.
+	sl_C2 = 1.0
 	sl_gamma = 0.01
 	sl_margin = 0.01
 	sl_sampleR = 5000
@@ -207,11 +208,12 @@ def test_covtype ():
 	init_pt = Y.nonzero()[0][nr.choice(len(Y.nonzero()[0]),2,replace=False)]
 
 	prms = ASI.Parameters(pi=pi,sparse=sparse, verbose=True, eta=eta)
-	slprms = SL.SPSDParameters(alpha=sl_alpha, C=sl_C, gamma=sl_gamma, margin=sl_margin, 
+	slprms = SL.SPSDParameters(alpha=sl_alpha, C1=sl_C1, C2=sl_C2, gamma=sl_gamma, margin=sl_margin, 
 		epochs=sl_epochs, npairs_per_epoch=sl_npairs_per_epoch, nneg_per_pair=sl_nneg_per_pair, batch_size=sl_batch_size)
 
 	kAS = ASI.kernelAS (prms)
-	aAS = AAS.adaptiveKernelAS(W0, T, prms, slprms)
+	# aAS = AAS.adaptiveKernelAS(W0, T, prms, slprms, from_all_data=True)
+	aAS = AAS.adaptiveKernelAS(W0, T, prms, slprms, from_all_data=False)
 
 	kAS.initialize(X,init_labels={p:1 for p in init_pt})
 	aAS.initialize(X,init_labels={p:1 for p in init_pt})
@@ -231,14 +233,14 @@ def test_covtype ():
 		hits1.append(hits1[-1]+Y[idx1])
 		hits2.append(hits2[-1]+Y[idx2])
 
-	fname = '%s/aas_stratfrac_%.3f_K_%i_T_%i_alpha_%.3f_gamma_%.3f_epochs_%i_batchsize_%i.npy'
-	fname = fname%(results_dir, strat_frac, K, T, sl_alpha, sl_gamma, sl_epochs, sl_batch_size)
+	# fname = '%s/aas_stratfrac_%.3f_K_%i_T_%i_alpha_%.3f_gamma_%.3f_epochs_%i_batchsize_%i.npy'
+	# fname = fname%(results_dir, strat_frac, K, T, sl_alpha, sl_gamma, sl_epochs, sl_batch_size)
 
 
-	save_params = [seed, K, T, strat_frac, sl_alpha, sl_C, sl_gamma, sl_margin, sl_epochs, sl_npairs_per_epoch, sl_nneg_per_pair, sl_batch_size]
-	save_results = [hits1, hits2]#, knn, knn_avg_native, knn_avg_learned]
+	# save_params = [seed, K, T, strat_frac, sl_alpha, sl_C, sl_gamma, sl_margin, sl_epochs, sl_npairs_per_epoch, sl_nneg_per_pair, sl_batch_size]
+	# save_results = [hits1, hits2]#, knn, knn_avg_native, knn_avg_learned]
 	
-	with open(fname, 'w') as fh: pick.dump({'params':save_params, 'results':save_results}, fh)
+	# with open(fname, 'w') as fh: pick.dump({'params':save_params, 'results':save_results}, fh)
 
 	IPython.embed()	
 
@@ -254,8 +256,103 @@ def test_covtype ():
 
 	IPython.embed()
 
+def test_covtype2 ():
+	seed = 0
+	nr.seed(seed)
+
+	verbose = True
+	sparse = True
+	pi = 0.5
+	eta = 0.7
+	K = 999
+	T = 200
+
+	sl_alpha = 0.01
+	sl_C1 = 1e-5
+	sl_C2 = 1.0
+	sl_gamma = 0.01
+	sl_margin = 0.01
+	sl_sampleR = 5000
+	sl_epochs = 10
+	sl_npairs_per_epoch = 30000
+	sl_nneg_per_pair = 1
+	sl_batch_size = 1000
+	
+	strat_frac = 1.0
+	X0,Y0,classes = load_covertype(sparse=sparse)
+	if strat_frac >= 1.0:
+		X, Y = X0, Y0
+	else:
+		X, Y = stratified_sample(X0, Y0, classes, strat_frac=strat_frac)
+
+	d,n = X.shape
+
+	X_norms = np.sqrt(((X.multiply(X)).sum(axis=0))).A.squeeze()
+	X = X.dot(ss.spdiags([1/X_norms],[0],n,n)) # Normalization
+
+	cl = 4
+	Y = (Y==cl)
+
+	W0 = np.eye(d)
+	
+	init_pt = Y.nonzero()[0][nr.choice(len(Y.nonzero()[0]),2,replace=False)]
+
+	prms = ASI.Parameters(pi=pi,sparse=sparse, verbose=True, eta=eta)
+	slprms = SL.SPSDParameters(alpha=sl_alpha, C1=sl_C1, C2=sl_C2, gamma=sl_gamma, margin=sl_margin, 
+		epochs=sl_epochs, npairs_per_epoch=sl_npairs_per_epoch, nneg_per_pair=sl_nneg_per_pair, batch_size=sl_batch_size)
+
+	kAS = ASI.kernelAS (prms)
+	aAS1 = AAS.adaptiveKernelAS(W0, T, prms, slprms, from_all_data=True)
+	aAS2 = AAS.adaptiveKernelAS(W0, T, prms, slprms, from_all_data=False)
+
+	kAS.initialize(X,init_labels={p:1 for p in init_pt})
+	aAS1.initialize(X,init_labels={p:1 for p in init_pt})
+	aAS2.initialize(X,init_labels={p:1 for p in init_pt})
+
+	hits1 = [2]
+	hits2 = [2]
+	hits3 = [2]
+
+	for i in xrange(K):
+
+		idx1 = kAS.getNextMessage()
+		idx2 = aAS1.getNextMessage()
+		idx3 = aAS2.getNextMessage()
+
+		kAS.setLabelCurrent(Y[idx1])
+		aAS1.setLabelCurrent(Y[idx2])
+		aAS2.setLabelCurrent(Y[idx3])
+		print('')
+
+		hits1.append(hits1[-1]+Y[idx1])
+		hits2.append(hits2[-1]+Y[idx2])
+		hits3.append(hits3[-1]+Y[idx3])
+
+	# fname = '%s/aas_stratfrac_%.3f_K_%i_T_%i_alpha_%.3f_gamma_%.3f_epochs_%i_batchsize_%i.npy'
+	# fname = fname%(results_dir, strat_frac, K, T, sl_alpha, sl_gamma, sl_epochs, sl_batch_size)
+
+
+	# save_params = [seed, K, T, strat_frac, sl_alpha, sl_C, sl_gamma, sl_margin, sl_epochs, sl_npairs_per_epoch, sl_nneg_per_pair, sl_batch_size]
+	# save_results = [hits1, hits2]#, knn, knn_avg_native, knn_avg_learned]
+	
+	# with open(fname, 'w') as fh: pick.dump({'params':save_params, 'results':save_results}, fh)
+
+	IPython.embed()	
+
+	itr = range(K+1)
+	plt.plot(itr, hits1, color='r', label='original AS')
+	plt.plot(itr, hits2, color='b', label='adaptive1 AS')
+	plt.plot(itr, hits3, color='b', label='adaptive2 AS')
+	plt.xlabel('iterations')
+	plt.ylabel('number of hits')
+	plt.title('covertype data-set')
+	plt.legend(loc=4)
+	plt.show()
+
+
+	IPython.embed()
 
 if __name__ == '__main__':
-	#test_covtype()
+	test_covtype()
 	# X,Y,C = load_higgs()
-	pass
+	# pass
