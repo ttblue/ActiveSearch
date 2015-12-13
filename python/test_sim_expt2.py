@@ -80,7 +80,7 @@ def load_higgs (sparse=True, fname = None):
 		fname = osp.join(data_dir, 'HIGGS.csv')
 	else:
 		if fname[-3:] == '.cpk':
-			with open(fname,'r') as fh: X,Y = pick.load(fh)	
+			with open(fname,'r') as fh: X,Y = pick.load(fh) 
 	fn = open(fname,'r')
 	data = csv.reader(fn)
 
@@ -180,7 +180,7 @@ def return_average_positive_neighbors (X, Y, k, use_for=True):
 		posM[xrange(npos), pos_inds] = -np.inf
 		MsimInds = posM.argsort(axis=1)[:,-k:]
 
-		MsimY =	Y[MsimInds]
+		MsimY = Y[MsimInds]
 
 		return MsimY.sum(axis=None)/(npos*k)
 
@@ -201,7 +201,7 @@ def test_covtype (seed=0):
 	sl_gamma = 0.01
 	sl_margin = 0.01
 	sl_sampleR = 5000
-	sl_epochs = 10
+	sl_epochs = 30
 	sl_npairs_per_epoch = 30000
 	sl_nneg_per_pair = 1
 	sl_batch_size = 1000
@@ -279,23 +279,24 @@ def test_higgs (seed=0):
 	sl_gamma = 0.01
 	sl_margin = 0.01
 	sl_sampleR = 5000
-	sl_epochs = 10
+	sl_epochs = 30
 	sl_npairs_per_epoch = 30000
 	sl_nneg_per_pair = 1
 	sl_batch_size = 1000
 	
 	# Stratified sampling
 	strat_frac = 1.0
+	t1 = time.time()
 	X,Y,classes = load_higgs(sparse=sparse)
+	print ('Time taken to load %.2fs'%(time.time()-t1))
 	if strat_frac < 1.0:
 		X, Y = stratified_sample(X, Y, classes, strat_frac=strat_frac)
-	d,n = X.shape
-
-        IPython.embed()
+	IPython.embed()
 
 	# Changing prevalence of +
 	prev = 0.005
 	X,Y = change_prev (X,Y,prev=prev)
+	d,n = X.shape
 
 	X_norms = np.sqrt(((X.multiply(X)).sum(axis=0))).A.squeeze()
 	X = X.dot(ss.spdiags([1/X_norms],[0],n,n)) # Normalization
@@ -321,16 +322,13 @@ def test_higgs (seed=0):
 	hits3 = [2]
 
 	for i in xrange(K):
-
 		idx1 = kAS.getNextMessage()
 		idx2 = aAS1.getNextMessage()
 		idx3 = aAS2.getNextMessage()
-
 		kAS.setLabelCurrent(Y[idx1])
 		aAS1.setLabelCurrent(Y[idx2])
 		aAS2.setLabelCurrent(Y[idx3])
 		print('')
-
 		hits1.append(hits1[-1]+Y[idx1])
 		hits2.append(hits2[-1]+Y[idx2])
 		hits3.append(hits3[-1]+Y[idx3])
@@ -367,10 +365,10 @@ if __name__ == '__main__':
 
 	seeds = nr.choice(200,num_expts,replace=False)
 
-        if num_expts == 1:
-                print ('Running 1 experiment')
-                test_funcs[dset](seeds[0])
-        else:
-                print ('Running %i experiments'%num_expts)
-                pl = Pool(num_expts)
-                pl.map(test_funcs[dset], seeds)
+		if num_expts == 1:
+				print ('Running 1 experiment')
+				test_funcs[dset](seeds[0])
+		else:
+				print ('Running %i experiments'%num_expts)
+				pl = Pool(num_expts)
+				pl.map(test_funcs[dset], seeds)
