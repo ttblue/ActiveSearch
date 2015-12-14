@@ -222,8 +222,8 @@ def test_covtype (seed=0):
 	cl = 4
 	Y = (Y==cl)
 
-	n_pos = 5
-	n_neg = 100
+	n_pos = 50
+	n_neg = 1000
 
 	n_samples_pos = np.min([n_pos,len(Y.nonzero()[0])])
 	n_samples_neg = np.min([n_neg,len((Y == 0).nonzero()[0])])
@@ -329,8 +329,8 @@ def test_higgs (seed=0):
 	X_norms = np.sqrt(((X.multiply(X)).sum(axis=0))).A.squeeze()
 	X = X.dot(ss.spdiags([1/X_norms],[0],n,n)) # Normalization
 
-	n_pos = 5
-	n_neg = 100
+	n_pos = 50
+	n_neg = 1000
 
 	n_samples_pos = np.min([n_pos,len(Y.nonzero()[0])])
 	n_samples_neg = np.min([n_neg,len((Y == 0).nonzero()[0])])
