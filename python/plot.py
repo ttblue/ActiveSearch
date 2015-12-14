@@ -40,8 +40,8 @@ def plot_expts (hits):
 	
 	for k in hits:
 		for run in range(hits[k].shape[0]):
-			plt.plot(itr, hits[k][run, :], color=colors[k], alpha=0.1)
-		plt.plot(itr, mean_hits[k], label=k, color=colors[k])
+			plt.plot(itr, hits[k][run, :], color=colors[k], alpha=0.3)
+		plt.plot(itr, mean_hits[k], label=k, color=colors[k], linewidth=5)
 	
 	plt.legend(loc=2)
 	plt.show()
@@ -84,11 +84,15 @@ if __name__ == '__main__':
 	if len(sys.argv) > 1:
 		expt_dir = osp.join(results_dir,sys.argv[1])
 		if not osp.isdir(expt_dir):
-			expt_dir = osp.join(results_dir,'covertype/run1')
+			expt_dir = osp.join(results_dir,'covertype/run6')
 	else:
-		expt_dir = osp.join(results_dir,'covertype/run1')
+		expt_dir = osp.join(results_dir,'covertype/run6')
 
 	matplotlib.rcParams.update({'font.size': 20})
 
 	hits = get_expts_from_dir(expt_dir)
-	plot_subplot_expts(hits)
+	# plot_subplot_expts(hits)
+	plot_expts(hits)
+
+	# RUN 6 FOR COVERTYPE SEEMS BEST
+	

@@ -274,19 +274,19 @@ def test_higgs (seed=0):
 	K = 999
 	T = 200
 
-	sl_alpha = 0.05
+	sl_alpha = 0.01
 	sl_C1 = 0.0
 	sl_C2 = 1.0
 	sl_gamma = 0.01
 	sl_margin = 0.01
 	sl_sampleR = 5000
-	sl_epochs = 50
+	sl_epochs = 30
 	sl_npairs_per_epoch = 30000
 	sl_nneg_per_pair = 5
 	sl_batch_size = 1000
 	
 	# Stratified sampling
-	strat_frac = 1.0
+	strat_frac = 0.1
 	t1 = time.time()
 	X,Y,classes = load_higgs(sparse=sparse)
 	print ('Time taken to load %.2fs'%(time.time()-t1))
@@ -294,7 +294,7 @@ def test_higgs (seed=0):
 		X, Y = stratified_sample(X, Y, classes, strat_frac=strat_frac)
 
 	# Changing prevalence of +
-	prev = 0.005
+	prev = 0.025
 	X,Y = change_prev (X,Y,prev=prev)
 	d,n = X.shape
 
@@ -303,7 +303,8 @@ def test_higgs (seed=0):
 
 	W0 = np.eye(d)
 	
-	init_pt = Y.nonzero()[0][nr.choice(len(Y.nonzero()[0]),2,replace=False)]
+	num_init = 10
+	init_pt = Y.nonzero()[0][nr.choice(len(Y.nonzero()[0]),num_init,replace=False)]
 
 	prms = ASI.Parameters(pi=pi,sparse=sparse, verbose=True, eta=eta)
 	slprms = SL.SPSDParameters(alpha=sl_alpha, C1=sl_C1, C2=sl_C2, gamma=sl_gamma, margin=sl_margin, 
@@ -317,9 +318,9 @@ def test_higgs (seed=0):
 	aAS1.initialize(X,init_labels={p:1 for p in init_pt})
 	aAS2.initialize(X,init_labels={p:1 for p in init_pt})
 
-	hits1 = [2]
-	hits2 = [2]
-	hits3 = [2]
+	hits1 = [num_init]
+	hits2 = [num_init]
+	hits3 = [num_init]
 
 	for i in xrange(K):
 		idx1 = kAS.getNextMessage()
