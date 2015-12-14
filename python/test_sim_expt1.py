@@ -202,7 +202,7 @@ def test_covtype (seed=0):
 	sl_gamma = 0.01
 	sl_margin = 0.01
 	sl_sampleR = 5000
-	sl_epochs = 10
+	sl_epochs = 30
 	sl_npairs_per_epoch = 30000
 	sl_nneg_per_pair = 1
 	sl_batch_size = 1000
@@ -222,8 +222,8 @@ def test_covtype (seed=0):
 	cl = 4
 	Y = (Y==cl)
 
-	n_pos = 50
-	n_neg = 1000
+	n_pos = 300
+	n_neg = 30000
 
 	n_samples_pos = np.min([n_pos,len(Y.nonzero()[0])])
 	n_samples_neg = np.min([n_neg,len((Y == 0).nonzero()[0])])
@@ -329,8 +329,8 @@ def test_higgs (seed=0):
 	X_norms = np.sqrt(((X.multiply(X)).sum(axis=0))).A.squeeze()
 	X = X.dot(ss.spdiags([1/X_norms],[0],n,n)) # Normalization
 
-	n_pos = 50
-	n_neg = 1000
+	n_pos = 100
+	n_neg = 10000
 
 	n_samples_pos = np.min([n_pos,len(Y.nonzero()[0])])
 	n_samples_neg = np.min([n_neg,len((Y == 0).nonzero()[0])])
@@ -422,11 +422,12 @@ if __name__ == '__main__':
 
 	test_funcs = {1:test_covtype, 2:test_higgs}
 
-	seeds = nr.choice(200,num_expts,replace=False)
+	seeds = nr.choice(10^6,num_expts,replace=False)
 
 	if num_expts == 1:
 		print ('Running 1 experiment')
-		test_funcs[dset](seeds[0])
+		#test_funcs[dset](seeds[0])
+		test_funcs[dset](109)
 	else:
 		print ('Running %i experiments'%num_expts)
 		pl = Pool(num_expts)
