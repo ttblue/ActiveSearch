@@ -142,22 +142,32 @@ class SPSD:
 						W = self.prox(W - alpha*subGrad, l = alpha*self.params.gamma)
 						nBatch = 0
 						subGrad = 0
-						# change = W - self.W_prev
-						# change_frob = nlg.norm(change, ord='fro')
+						change = W - self.W_prev
+						change_frob = nlg.norm(change, ord='fro')
 						# print ('Difference Norm: ', change_frob)
 						# print ('Difference Initial: ', nlg.norm(W - self.W0, ord='fro'))
 						self.W_prev = W
 						#W = self.prox(W - alpha*self.subgradG(W,r), l = alpha*self.params.gamma)
 						itr += 1
+						
+					if(change_frob < 10^-6):
+						print ('Learning Done: Change the W is very small')
+						self.has_learned = True
+        				self.W = W
+						return
 			if(nBatch > 0):
 				W = self.prox(W - alpha*subGrad, l = alpha*self.params.gamma)
-				# change = W - self.W_prev
-				# change_frob = nlg.norm(change, ord='fro')
-				# print ('Difference Norm: ', change_frob)
-				# print ('Difference Initial: ', nlg.norm(W - self.W0, ord='fro'))
+				change = W - self.W_prev
+				change_frob = nlg.norm(change, ord='fro')
+				print ('Difference Norm: ', change_frob)
+				print ('Difference Initial: ', nlg.norm(W - self.W0, ord='fro'))
 				self.W_prev = W
-				#W = self.prox(W - alpha*self.subgradG(W,r), l = alpha*self.params.gamma)
 				itr += 1
+			if(change_frob < 10^-6):
+				print ('Learning Done: Change the W is very small')
+				self.has_learned = True
+        		self.W = W
+				return
 		
 		self.has_learned = True
 		self.W = W
