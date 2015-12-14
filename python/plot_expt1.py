@@ -40,7 +40,7 @@ def get_expts_from_dir (dir_path):
 	knns = {k:np.array(knns[k]) for k in knn_names}
 	return hits, knns
 
-def plot_expts (hits, title = ''):
+def plot_expts (hits, title = '', save=True):
 
 	itr = range(hits[hits.keys()[0]].shape[1])
 	mean_hits = {k:hits[k].mean(axis=0).squeeze() for k in hits} 
@@ -56,12 +56,20 @@ def plot_expts (hits, title = ''):
 	plt.xlabel('Iterations')
 	plt.ylabel('Number of Hits')
 	plt.legend(loc=2)
+
 	if title:
 		plt.title(title, y=1.02, fontsize=40)
 		# gcf().suptitle(title,fontsize=30)
+
+	if save:
+		fname = osp.join(results_dir, 'imgs', title+'_expt1_plot1.pdf')
+		fig = plt.figure(1)
+		fig.set_size_inches(24,14)
+		plt.savefig(fname, format='pdf', transparent=True, facecolor='w')
+
 	plt.show()
 
-def plot_subplot_expts(hits, title = ''):
+def plot_subplot_expts(hits, title = '', save=True):
 
 	mean_hits = {k:hits[k].mean(axis=0).squeeze() for k in hits} 
 	max_hits = {k:hits[k].max(axis=1).squeeze() for k in hits}
@@ -71,13 +79,18 @@ def plot_subplot_expts(hits, title = ''):
 	max_alg = {i:max([max_hits[k][i] for k in max_hits]) for i in exp}
 	overall_max = max(max_alg.values())
 
-	gs = gridspec.GridSpec(5,5)
+	if save:
+		fig = plt.figure(1)
+		fig.set_size_inches(24,14)
 	
+	gs = gridspec.GridSpec(5,5)
 	ax = {}
 	for i in exp:
 		ax[i] = plt.subplot(gs[int(i>=5), i%5])
 		ax[i].set_ylim([0,overall_max])
 		ax[i].axes.get_xaxis().set_ticks([])
+		plt.xticks(fontsize=20)
+		plt.yticks(fontsize=20)
 	ax[10] = plt.subplot(gs[2:,:])
 	
 	sub_itr = range(200, hits[hits.keys()[0]].shape[1])
@@ -90,22 +103,28 @@ def plot_subplot_expts(hits, title = ''):
 	
 	plt.xlabel('Iterations')
 	plt.ylabel('Number of Hits')
+	plt.xticks(fontsize=20)
+	plt.yticks(fontsize=20)
 	plt.legend(loc=2)
 	if title:
 		# plt.title(title)
 		gcf().suptitle(title,fontsize=30)
+	
+	if save:
+		fname = osp.join(results_dir, 'imgs', title+'_expt1_plot2.pdf')
+		plt.savefig(fname, format='pdf', transparent=True, facecolor='w')
 	plt.show()
 
 
 if __name__ == '__main__':
 	import sys
-	matplotlib.rcParams.update({'font.size': 20})
+	matplotlib.rcParams.update({'font.size': 30})
 
-	expt_dir = osp.join(results_dir,'covertype/run6')
+	expt_dir = osp.join(results_dir,'dummy/run1')
 	if len(sys.argv) > 1:
 		expt_dir = osp.join(results_dir,sys.argv[1])
 		if not osp.isdir(expt_dir):
-			expt_dir = osp.join(results_dir,'covertype/run6')
+			expt_dir = osp.join(results_dir,'dummy/run1')
 
 	ptype = 1
 	if len(sys.argv) > 2:

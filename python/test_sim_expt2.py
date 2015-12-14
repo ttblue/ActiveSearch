@@ -231,7 +231,7 @@ def test_covtype (seed=0):
 
 	W0 = np.eye(d)
 	
-        num_init = 10
+	num_init = 10
 	init_pt = Y.nonzero()[0][nr.choice(len(Y.nonzero()[0]),num_init,replace=False)]
 
 	prms = ASI.Parameters(pi=pi,sparse=sparse, verbose=True, eta=eta)
