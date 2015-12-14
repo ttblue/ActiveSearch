@@ -156,10 +156,12 @@ def change_prev (X,Y,prev=0.05):
 	return X[:,prev_idxs], Y[prev_idxs]
 	
 
-def return_average_positive_neighbors (X, Y, k, use_for=True):
+def return_average_positive_neighbors (X, Y, k, use_for=True, seed=0):
 	Y = np.asarray(Y)
-
-	pos_inds = Y.nonzero()[0]
+	
+	nr.seed(seed)
+	n_sample_pos = 200;
+	pos_inds = Y.nonzero()[0][nr.choice(len(Y.nonzero()[0]),n_sample_pos,replace=False)]
 	npos = len(pos_inds)
 
 	if use_for:
@@ -184,7 +186,6 @@ def return_average_positive_neighbors (X, Y, k, use_for=True):
 
 		return MsimY.sum(axis=None)/(npos*k)
 
-
 def test_covtype (seed=0):
 	nr.seed(seed)
 
@@ -206,7 +207,7 @@ def test_covtype (seed=0):
 	sl_nneg_per_pair = 1
 	sl_batch_size = 1000
 	
-	strat_frac = 1.0
+	strat_frac = 1
 	X0,Y0,classes = load_covertype(sparse=sparse)
 	if strat_frac >= 1.0:
 		X, Y = X0, Y0
@@ -221,8 +222,8 @@ def test_covtype (seed=0):
 	cl = 4
 	Y = (Y==cl)
 
-	n_pos = 500
-	n_neg = 10000
+	n_pos = 5
+	n_neg = 100
 
 	n_samples_pos = np.min([n_pos,len(Y.nonzero()[0])])
 	n_samples_neg = np.min([n_neg,len((Y == 0).nonzero()[0])])
@@ -281,10 +282,10 @@ def test_covtype (seed=0):
 		hits2.append(hits2[-1]+Y[idx2])
 	
 	# Calculate KNN Accuracy
-	knn_avg_native = return_average_positive_neighbors(X, Y, knn)
-	knn_avg_learned = return_average_positive_neighbors(X1, Y, knn)
+	knn_avg_native = return_average_positive_neighbors(X, Y, knn, seed)
+	knn_avg_learned = return_average_positive_neighbors(X1, Y, knn, seed)
 
-	save_results = {'kAS': hits1, 'aAS':hits2, 'knn_native':knn_avg_native, 'knn_learned':knn_learned}
+	save_results = {'kAS': hits1, 'aAS':hits2, 'knn_native':knn_avg_native, 'knn_learned':knn_avg_learned}
 	fname = 'covertype/expt1_seed_%d_npos_%d_nneg_%d.cpk'%(seed, n_samples_pos, n_samples_neg)
 	fname = osp.join(results_dir, fname)
 
@@ -313,7 +314,7 @@ def test_higgs (seed=0):
 	sl_batch_size = 1000
 	
 	# Stratified sampling
-	strat_frac = 1.0
+	strat_frac = 0.1
 	t1 = time.time()
 	X,Y,classes = load_higgs(sparse=sparse)
 	print ('Time taken to load %.2fs'%(time.time()-t1))
@@ -328,8 +329,8 @@ def test_higgs (seed=0):
 	X_norms = np.sqrt(((X.multiply(X)).sum(axis=0))).A.squeeze()
 	X = X.dot(ss.spdiags([1/X_norms],[0],n,n)) # Normalization
 
-	n_pos = 50
-	n_neg = 1000
+	n_pos = 5
+	n_neg = 100
 
 	n_samples_pos = np.min([n_pos,len(Y.nonzero()[0])])
 	n_samples_neg = np.min([n_neg,len((Y == 0).nonzero()[0])])
@@ -388,11 +389,11 @@ def test_higgs (seed=0):
 		hits2.append(hits2[-1]+Y[idx2])
 	
 	# Calculate KNN Accuracy
-	knn_avg_native = return_average_positive_neighbors(X, Y, knn)
-	knn_avg_learned = return_average_positive_neighbors(X1, Y, knn)
+	knn_avg_native = return_average_positive_neighbors(X, Y, knn, seed)
+	knn_avg_learned = return_average_positive_neighbors(X1, Y, knn, seed)
 
-	save_results = {'kAS': hits1, 'aAS':hits2, 'knn_native':knn_avg_native, 'knn_learned':knn_learned}
-	fname = 'covertype/expt1_seed_%d_npos_%d_nneg_%d.cpk'%(seed, n_samples_pos, n_samples_neg)
+	save_results = {'kAS': hits1, 'aAS':hits2, 'knn_native':knn_avg_native, 'knn_learned':knn_avg_learned}
+	fname = 'higgs/expt1_seed_%d_npos_%d_nneg_%d.cpk'%(seed, n_samples_pos, n_samples_neg)
 	fname = osp.join(results_dir, fname)
 
 	with open(fname, 'w') as fh: pick.dump(save_results, fh)
