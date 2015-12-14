@@ -124,10 +124,10 @@ class SPSD:
 		print ('Starting to learn the similarity')
 		# print ('Number of Positive pairs per Epoc: ', npe)
 		self.W_prev = W
-
 		print ('C1: %f\nC2: %.3f\nnumPOS: %i\nnumNEG: %i'%(self.params.C1, self.params.C2, npos, nneg))
 		
 		for epoch in xrange(self.params.epochs):
+			epoch_start_W = W
 			print ('Epoch No. ', epoch+1, '   Starting...')
 			pos_pair_inds = [pind for pind in itertools.permutations(xrange(npos),2)]
 			nr.shuffle(pos_pair_inds)
@@ -151,23 +151,24 @@ class SPSD:
 						itr += 1
 						
 					if(change_frob < 10^-6):
-						print ('Learning Done: Change the W is very small')
+						print ('Learning Done: Change in W is very small')
 						self.has_learned = True
-        				self.W = W
+        					self.W = W
 						return
 			if(nBatch > 0):
 				W = self.prox(W - alpha*subGrad, l = alpha*self.params.gamma)
 				change = W - self.W_prev
 				change_frob = nlg.norm(change, ord='fro')
-				print ('Difference Norm: ', change_frob)
-				print ('Difference Initial: ', nlg.norm(W - self.W0, ord='fro'))
+				#print ('Difference Norm: ', change_frob)
+				#print ('Difference Initial: ', nlg.norm(W - self.W0, ord='fro'))
 				self.W_prev = W
 				itr += 1
 			if(change_frob < 10^-6):
-				print ('Learning Done: Change the W is very small')
+				print ('Learning Done: Change in W is very small')
 				self.has_learned = True
-        		self.W = W
-				return
+        			self.W = W
+				return 
+			print('Change in W in this Epoch: ' nlg.norm(W - epoch_start_W, ord='fro'))
 		
 		self.has_learned = True
 		self.W = W
