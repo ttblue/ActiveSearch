@@ -74,7 +74,7 @@ def load_covertype (sparse=True, fname=None):
 	Y = np.asarray(Y)
 	return X, Y, classes
 
-def load_higgs (sparse=True, fname = None):
+def load_higgs (sparse=True, fname = None, add_bias=True):
 
 	if fname is None:
 		fname = osp.join(data_dir, 'HIGGS.csv')
@@ -85,6 +85,8 @@ def load_higgs (sparse=True, fname = None):
 	data = csv.reader(fn)
 
 	r = 28
+	if add_bias:
+		r += 1
 
 	classes = []
 	if sparse:
@@ -99,7 +101,10 @@ def load_higgs (sparse=True, fname = None):
 			Y.append(y)
 			if y not in classes: classes.append(y)
 
-			xvec = np.array(line[1:]).astype(float)
+			if add_bias:
+				xvec = np.array([1.0] + line[1:]).astype(float)
+			else:
+				xvec = np.array(line[1:]).astype(float)
 			xcol = xvec.nonzero()[0].tolist()
 
 			rows.extend(xcol)
@@ -115,7 +120,10 @@ def load_higgs (sparse=True, fname = None):
 		X = []
 		Y = []
 		for line in data:
-			X.append(np.asarray(line[1:]).astype(float))
+			if add_bias:
+				X.append(np.asarray([1.0]+line[1:]).astype(float))
+			else:
+				X.append(np.asarray(line[1:]).astype(float))
 			y = int(float(line[0]))
 			Y.append(y)
 			if y not in classes: classes.append(y)
