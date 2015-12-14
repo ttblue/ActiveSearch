@@ -186,7 +186,7 @@ def return_average_positive_neighbors (X, Y, k, use_for=True):
 
 
 def test_covtype (seed=0):
-	# nr.seed(seed)
+	nr.seed(seed)
 
 	verbose = True
 	sparse = True
@@ -203,7 +203,7 @@ def test_covtype (seed=0):
 	sl_sampleR = 5000
 	sl_epochs = 30
 	sl_npairs_per_epoch = 30000
-	sl_nneg_per_pair = 1
+	sl_nneg_per_pair = 5
 	sl_batch_size = 1000
 	
 	strat_frac = 1.0
@@ -238,9 +238,9 @@ def test_covtype (seed=0):
 	aAS1.initialize(X,init_labels={p:1 for p in init_pt})
 	aAS2.initialize(X,init_labels={p:1 for p in init_pt})
 
-	hits1 = [2]
-	hits2 = [2]
-	hits3 = [2]
+	hits1 = [num_init]
+	hits2 = [num_init]
+	hits3 = [num_init]
 
 	for i in xrange(K):
 
@@ -265,7 +265,7 @@ def test_covtype (seed=0):
 
 
 def test_higgs (seed=0):
-	# nr.seed(seed)
+	nr.seed(seed)
 
 	verbose = True
 	sparse = True
@@ -363,8 +363,8 @@ if __name__ == '__main__':
 
 	test_funcs = {1:test_covtype, 2:test_higgs}
 
-	# seeds = nr.choice(200,num_expts,replace=False)
-	seeds = range(num_expts)
+	seeds = nr.choice(1000,num_expts,replace=False)
+	# seeds = range(num_expts)
 	if num_expts == 1:
 		print ('Running 1 experiment')
 		test_funcs[dset](seeds[0])
