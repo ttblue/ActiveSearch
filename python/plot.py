@@ -1,5 +1,7 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 
 import os, os.path as osp
 import cPickle as pick
@@ -34,7 +36,6 @@ def plot_expts (hits):
 	mean_hits = {k:hits[k].mean(axis=0).squeeze() for k in hits} 
 	mean2_hits = {k:hits[k].mean(axis=1).squeeze() for k in hits}
 	max_hits = {k:hits[k].max(axis=1).squeeze() for k in hits}
-	IPython.embed()
 	colors = {k:c for k,c in zip(mean_hits.keys(),['r','g','b'])}
 	
 	for k in hits:
@@ -42,13 +43,52 @@ def plot_expts (hits):
 			plt.plot(itr, hits[k][run, :], color=colors[k], alpha=0.1)
 		plt.plot(itr, mean_hits[k], label=k, color=colors[k])
 	
-	plt.legend()
+	plt.legend(loc=2)
+	plt.show()
+
+def plot_subplot_expts(hits):
+
+	mean_hits = {k:hits[k].mean(axis=0).squeeze() for k in hits} 
+	max_hits = {k:hits[k].max(axis=1).squeeze() for k in hits}
+	colors = {k:c for k,c in zip(mean_hits.keys(),['r','g','b'])}
+	itr = range(hits[hits.keys()[0]].shape[1])
+	exp = range(10)
+	max_alg = {i:max([max_hits[k][i] for k in max_hits]) for i in exp}
+	overall_max = max(max_alg.values())
+
+	gs = gridspec.GridSpec(5,5)
+	
+	ax = {}
+	for i in exp:
+		ax[i] = plt.subplot(gs[int(i>=5), i%5])
+		ax[i].set_ylim([0,overall_max])
+		ax[i].axes.get_xaxis().set_ticks([])
+	ax[10] = plt.subplot(gs[2:,:])
+	
+
+	# IPython.embed()
+	sub_itr = range(200, hits[hits.keys()[0]].shape[1])
+	n_sub = len(sub_itr)
+	for k in hits:
+		for run in range(hits[k].shape[0]):
+			ax[run].plot(sub_itr, hits[k][run, -n_sub:], color=colors[k], linewidth=3, alpha=0.8)
+			ax[run].set_yticks([max_alg[run]])
+		ax[10].plot(itr, mean_hits[k], label=k, color=colors[k], linewidth=5, alpha=0.8)
+	
+	plt.legend(loc=2)
 	plt.show()
 
 
-	IPython.embed()
-
 if __name__ == '__main__':
-	cov_type_dir = osp.join(results_dir,'covertype/run4')
-	hits_ct = get_expts_from_dir(cov_type_dir)
-	plot_expts(hits_ct)
+	import sys
+	if len(sys.argv) > 1:
+		expt_dir = osp.join(results_dir,sys.argv[1])
+		if not osp.isdir(expt_dir):
+			expt_dir = osp.join(results_dir,'covertype/run1')
+	else:
+		expt_dir = osp.join(results_dir,'covertype/run1')
+
+	matplotlib.rcParams.update({'font.size': 20})
+
+	hits = get_expts_from_dir(expt_dir)
+	plot_subplot_expts(hits)
