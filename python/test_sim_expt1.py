@@ -202,12 +202,12 @@ def test_covtype (seed=0):
 	sl_gamma = 0.01
 	sl_margin = 0.01
 	sl_sampleR = 5000
-	sl_epochs = 30
+	sl_epochs = 10
 	sl_npairs_per_epoch = 30000
 	sl_nneg_per_pair = 1
 	sl_batch_size = 1000
 	
-	strat_frac = 1
+	strat_frac = 0.2
 	X0,Y0,classes = load_covertype(sparse=sparse)
 	if strat_frac >= 1.0:
 		X, Y = X0, Y0
@@ -222,8 +222,8 @@ def test_covtype (seed=0):
 	cl = 4
 	Y = (Y==cl)
 
-	n_pos = 5
-	n_neg = 100
+	n_pos = 100
+	n_neg = 10000
 
 	n_samples_pos = np.min([n_pos,len(Y.nonzero()[0])])
 	n_samples_neg = np.min([n_neg,len((Y == 0).nonzero()[0])])
@@ -261,13 +261,13 @@ def test_covtype (seed=0):
 	kAS = ASI.kernelAS (prms)
 	aAS = AAS.adaptiveKernelAS(W0, T, prms, slprms)
 
-	init_pt = Y.nonzero()[0][nr.choice(len(Y.nonzero()[0]),2,replace=False)]
+	init_pt = Y.nonzero()[0][nr.choice(len(Y.nonzero()[0]),10,replace=False)]
 
 	kAS.initialize(X, init_labels={p:1 for p in init_pt})
 	aAS.initialize(X1, init_labels={p:1 for p in init_pt})
 
-	hits1 = [2]
-	hits2 = [2]
+	hits1 = [10]
+	hits2 = [10]
 
 	for i in xrange(K):
 
@@ -314,7 +314,7 @@ def test_higgs (seed=0):
 	sl_batch_size = 1000
 	
 	# Stratified sampling
-	strat_frac = 0.1
+	strat_frac = 0.02
 	t1 = time.time()
 	X,Y,classes = load_higgs(sparse=sparse)
 	print ('Time taken to load %.2fs'%(time.time()-t1))
@@ -329,8 +329,8 @@ def test_higgs (seed=0):
 	X_norms = np.sqrt(((X.multiply(X)).sum(axis=0))).A.squeeze()
 	X = X.dot(ss.spdiags([1/X_norms],[0],n,n)) # Normalization
 
-	n_pos = 5
-	n_neg = 100
+	n_pos = 100
+	n_neg = 5000
 
 	n_samples_pos = np.min([n_pos,len(Y.nonzero()[0])])
 	n_samples_neg = np.min([n_neg,len((Y == 0).nonzero()[0])])
