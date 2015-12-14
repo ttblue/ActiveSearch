@@ -279,8 +279,8 @@ def test_higgs (seed=0):
 	sparse = True
 	pi = 0.5
 	eta = 0.7
-	K = 1999
-	T = 500
+	K = 999
+	T = 200
 
 	sl_alpha = 0.01
 	sl_C1 = 0.0
