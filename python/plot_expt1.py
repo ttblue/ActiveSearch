@@ -93,7 +93,7 @@ def plot_subplot_expts(hits, title = '', save=True):
 		plt.yticks(fontsize=20)
 	ax[10] = plt.subplot(gs[2:,:])
 	
-	sub_itr = range(200, hits[hits.keys()[0]].shape[1])
+	sub_itr = itr#range(200, hits[hits.keys()[0]].shape[1])
 	n_sub = len(sub_itr)
 	for k in alg_names:
 		for run in range(hits[k].shape[0]):
